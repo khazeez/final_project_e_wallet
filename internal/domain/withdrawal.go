@@ -3,8 +3,8 @@ package domain
 import "time"
 
 type Withdrawal struct {
-	ID int
-	WalletId Wallet
-	Amount int64
-	Timestamp time.Time
+	ID        int       `json:"id"`
+	WalletId  Wallet    `json:"wallet_id"`
+	Amount    int64     `json:"amount"`
+	Timestamp time.Time `json:"time"`
 }

@@ -3,10 +3,10 @@ package domain
 import "time"
 
 type Payment struct {
-	ID int
-	WalletId int
-	Amount int64
-	Timestamp time.Time
-	PaymentType string
-	PaymentDetail string
+	ID            int       `json:"id"`
+	WalletId      int       `json:"wallet_id"`
+	Amount        int64     `json:"amount"`
+	Timestamp     time.Time `json:"time"`
+	PaymentType   string    `json:"payment_type"`
+	PaymentDetail string    `json:"payment_detail"`
 }

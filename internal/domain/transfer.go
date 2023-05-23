@@ -5,9 +5,9 @@ import (
 )
 
 type Transfer struct {
-	ID int
-	SenderId Wallet
-	ReceiferId Wallet
-	Amount int64
-	Timestamp time.Time
+	ID int `json:"id"`
+	SenderId Wallet `json:"sender_id"`
+	ReceiferId Wallet `json:"receifer_id"`
+	Amount int64 `json:"amount"`
+	Timestamp time.Time `json:"time"`
 }
