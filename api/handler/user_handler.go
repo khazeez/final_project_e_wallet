@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
-	"github.com/KhoirulAziz99/final_project_e_wallet/internal/domain"
 	"github.com/KhoirulAziz99/final_project_e_wallet/internal/app"
+	"github.com/KhoirulAziz99/final_project_e_wallet/internal/domain"
+	"github.com/gin-gonic/gin"
 )
 
 type UserHandler struct {

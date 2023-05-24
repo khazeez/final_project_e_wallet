@@ -37,7 +37,7 @@ func (u UserRepository) Update(updetedUser *domain.User) error {
 }
 
 func (u UserRepository) Delete(id int) error {
-	query := `UPADATE users SET is_delete = true WHERE user_id = $1`
+	query := `UPDATE users SET is_delete = true WHERE user_id = $1`
 	_, err := u.db.Exec(query, id)
 	if err != nil {
 		panic(err)
