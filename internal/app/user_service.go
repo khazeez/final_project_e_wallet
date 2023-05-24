@@ -1,13 +1,15 @@
 package app
 
 import (
+	"errors"
+
 	"github.com/KhoirulAziz99/final_project_e_wallet/internal/domain"
 	"github.com/KhoirulAziz99/final_project_e_wallet/internal/repository"
-	"errors"
 )
+
 type UserUsecase interface {
-	InsertUser(*domain.User) error
-	UpdateUser(*domain.User) error
+	InsertUser(user *domain.User) error
+	UpdateUser(user *domain.User) error
 	FindOne(id int) (*domain.User, error)
 	FindAll() ([]domain.User, error)
 	Delete(id int) error
@@ -23,7 +25,7 @@ func NewUserUsecase(userRepository repository.UserRepository) UserUsecase {
 }
 
 func (u *userUsecase) InsertUser(user *domain.User) error {
-	
+
 	if user.Name == "" {
 		return errors.New("name is required")
 	}
