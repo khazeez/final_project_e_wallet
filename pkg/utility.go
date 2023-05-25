@@ -1,14 +1,14 @@
 package pkg
 
 import (
-	 "log"
+	"log"
 	"os"
 
 	"github.com/joho/godotenv"
 )
 
 func GetEnv(key string) string {
-	err := godotenv.Load(".env")
+	err := godotenv.Load("sample.env")
 
 	if err != nil {
 		 log.Fatalf("Error loading .env file")
