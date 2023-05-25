@@ -57,7 +57,7 @@ func LoginHandler(c *gin.Context) {
 		return
 	}
 
-	username := c.Request.FormValue("name")
+	username := c.Request.FormValue("username")
 	password := c.Request.FormValue("password")
 
 	userName := getUserByUsername(username)
