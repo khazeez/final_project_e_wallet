@@ -8,3 +8,9 @@ type User struct {
 	ProfilePicture string `json:"profile_picture"`
 	IsDeleted      bool   `json:"is_deleted"`
 }
+
+
+type LoginUser struct {
+	Username string	`json:"username"`
+	Password string `json:"password"`
+}
