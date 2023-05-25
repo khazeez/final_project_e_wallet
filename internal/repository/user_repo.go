@@ -10,11 +10,9 @@ import (
 type UserRepository struct {
 	db *sql.DB
 }
-
 func NewUserRepository(db *sql.DB) *UserRepository {
 	return &UserRepository{db: db}
 }
-
 func (u UserRepository) Create(newUser *domain.User) error {
 	query := `INSERT INTO users (user_id, name, email, password, profile_picture) VALUES ($1, $2, $3, $4, $5)`
 	_, err := u.db.Exec(query, newUser.ID, newUser.Name, newUser.Email, newUser.Password, newUser.ProfilePicture)
@@ -39,7 +37,7 @@ func (u UserRepository) Update(updetedUser *domain.User) error {
 }
 
 func (u UserRepository) Delete(id int) error {
-	query := `UPADATE users SET is_delete = true WHERE user_id = $1`
+	query := `UPDATE users SET is_delete = true WHERE user_id = $1`
 	_, err := u.db.Exec(query, id)
 	if err != nil {
 		panic(err)
@@ -52,15 +50,12 @@ func (u UserRepository) Delete(id int) error {
 func (u UserRepository) FindOne(id int) (*domain.User, error) {
 	query := `SELECT name, email, password, profile_picture FROM users WHERE user_id=$1;`
 	row := u.db.QueryRow(query, id)
-
 	var user domain.User
 	err := row.Scan(&user.Name, &user.Email, &user.Password, &user.ProfilePicture)
-
 	if err != nil {
 		panic(err)
 	}
 	user.ID = id
-
 	return &user, nil
 }
 
@@ -79,7 +74,6 @@ func (u UserRepository) FindAll() ([]domain.User, error) {
 		if err != nil {
 			panic(err)
 		}
-
 		users = append(users, user)
 	}
 	if err = rows.Err(); err != nil {
