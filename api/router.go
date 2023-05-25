@@ -18,7 +18,7 @@ func SetUpRouter(db *sql.DB) *gin.Engine {
 	apiV1 := r.Group("/api/v1")
 	userRouters := apiV1.Group("/users")
 	{
-		userRouters.POST("/login", pkg.LoginHandler)
+		userRouters.POST("/login", pkg.LoginGPTHandler(db))
 		userRouters.POST("/", userHandler.InsertUser)
 		userRouters.PUT("/:id", userHandler.UpdateUser)
 		userRouters.DELETE("/:id", userHandler.DeleteUser)
