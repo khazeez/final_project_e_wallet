@@ -6,6 +6,7 @@ import (
 	"github.com/KhoirulAziz99/final_project_e_wallet/api/handler"
 	"github.com/KhoirulAziz99/final_project_e_wallet/internal/app"
 	"github.com/KhoirulAziz99/final_project_e_wallet/internal/repository"
+	"github.com/KhoirulAziz99/final_project_e_wallet/pkg"
 	"github.com/gin-gonic/gin"
 )
 
@@ -21,6 +22,7 @@ func SetUpRouter(db *sql.DB) *gin.Engine {
 
 	userRouters := apiV1.Group("/users")
 	{
+		userRouters.POST("/login", pkg.LoginHandler)
 		userRouters.POST("/", userHandler.InsertUser)
 		userRouters.PUT("/:id", userHandler.UpdateUser)
 		userRouters.DELETE("/:id", userHandler.DeleteUser)

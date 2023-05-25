@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"log"
 
+	"golang.org/x/crypto/bcrypt"
+
 	"github.com/KhoirulAziz99/final_project_e_wallet/internal/domain"
 )
 
@@ -24,7 +26,13 @@ func NewUserRepository(db *sql.DB) *userRepository {
 }
 func (u userRepository) Create(newUser *domain.User) error {
 	query := `INSERT INTO users (user_id, name, email, password, profile_picture) VALUES ($1, $2, $3, $4, $5)`
-	_, err := u.db.Exec(query, newUser.ID, newUser.Name, newUser.Email, newUser.Password, newUser.ProfilePicture)
+	hashedPassword, errr := bcrypt.GenerateFromPassword([]byte(newUser.Password), bcrypt.DefaultCost)
+
+	if errr != nil {
+		panic(errr)
+	}
+
+	_, err := u.db.Exec(query, newUser.ID, newUser.Name, newUser.Email, hashedPassword, newUser.ProfilePicture)
 	if err != nil {
 		panic(err)
 	} else {
