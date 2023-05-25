@@ -2,75 +2,69 @@ package pkg
 
 import (
 	"database/sql"
-	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/KhoirulAziz99/final_project_e_wallet/internal/domain"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 )
+
+// type body struct {
+// 	username string
+// 	password string
+// }
+
+// type User struct {
+// 	ID       int    `json:"id"`
+// 	Username string `json:"username"`
+// 	Password string `json:"password"`
+// }
 
 var jwtKey = []byte("SECRET_CODE")
 
-func AuthMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		tokenString := c.GetHeader("Authorization")
-
-		if tokenString == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorization"})
-			c.Abort()
-			return
-		}
-		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) { return jwtKey, nil })
-
-		if !token.Valid || err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorization"})
-			c.Abort()
-			return
-		}
-
-		claims := token.Claims.(jwt.MapClaims)
-		c.Set("claims", claims)
-
-		c.Next()
-	}
-}
-
-type body struct {
-	username string
-	password string
-}
-
-type User struct {
-	ID       int    `json:"id"`
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
-
 func LoginHandler(c *gin.Context) {
 
+	// var body struct {
+	// 	Name     string
+	// 	Password string
+	// }
+
+	// if c.Bind(&body) != nil {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "failed to read body"})
+	// 	return
+	// }
+
+	// var DB *gorm.DB
 	var user domain.User
+	// DB.First(&user, "name = ?", body.Name)
 
-	if err := c.ShouldBind(&user); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+	// if user.ID == 0 {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user or password and id"})
+	// 	return
+	// }
 
-	username := c.Request.FormValue("username")
+	// if err := c.ShouldBind(&user); err != nil {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	// 	return
+	// }
+
+	// username := c.Request.FormValue("username")
 	password := c.Request.FormValue("password")
 
-	userName := getUserByUsername(username)
+	// , _ := FindOne(username)
+	var password_tes = bcrypt.CompareHashAndPassword([]byte(password), []byte(user.Password))
+
 	//logic authentication(compare username and password)
-	if userName != nil && user.Password == password {
-		//bikin code untuk generate token
+	if password_tes != nil {
+
 		token := jwt.New(jwt.SigningMethodHS256)
 
-		claims := token.Claims.(jwt.MapClaims) // ini map
+		claims := token.Claims.(jwt.MapClaims)
 
 		claims["username"] = user.Name
-		claims["exp"] = time.Now().Add(time.Minute * 1).Unix() //token akan expired dalam 1 menit
-
+		claims["exp"] = time.Now().Add(time.Minute * 1).Unix()
 		tokenString, err := token.SignedString(jwtKey)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -93,39 +87,76 @@ func ProfileHandler(c *gin.Context) {
 
 func LoginGPTHandler(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		username := c.PostForm("name")
-		password := c.PostForm("password")
+		var user domain.User
+		err := c.BindJSON(&user)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 
-		// Cek kecocokan pengguna di database
-		query := "SELECT id FROM users WHERE name = $1 AND password = $2"
-		var userID int
-		err := db.QueryRow(query, username, password).Scan(&userID)
+		// Dapatkan pengguna dari database berdasarkan username
+		query := "SELECT id, password FROM users WHERE username = $1"
+		err = db.QueryRow(query, user.Name).Scan(&user.ID, &user.Password)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
 			return
 		}
 
-		// Login berhasil
-		c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("Login successful for user with ID %d", userID)})
+		// Memeriksa kecocokan password
+		password := c.Request.FormValue("password")
+		err = bcrypt.CompareHashAndPassword([]byte(password), []byte(user.Password))
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
+			return
+		}
+
+		// Berhasil login, buat dan kirimkan token akses
+		token := jwt.New(jwt.SigningMethodHS256)
+
+		claims := token.Claims.(jwt.MapClaims)
+
+		claims["username"] = user.Name
+		claims["exp"] = time.Now().Add(time.Minute * 1).Unix()
+		tokenString, err := token.SignedString(jwtKey)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"token": tokenString})
+
 	}
 }
 
-func getUserByUsername(username string) *domain.User {
-	// Mengirimkan kueri ke database untuk mendapatkan informasi pengguna berdasarkan username
+// func getUserByUsername(username string) *domain.User {
+// 	// Mengirimkan kueri ke database untuk mendapatkan informasi pengguna berdasarkan username
+// 	var db *sql.DB
+// 	row := db.QueryRow("SELECT name, password FROM users WHERE name = $1", username)
+
+// 	// Menginisialisasi variabel untuk menyimpan hasil kueri
+// 	var user domain.User
+
+// 	// Mengisi nilai-nilai pengguna dari hasil kueri
+// 	err := row.Scan(&user.Name, &user.Password)
+// 	if err != nil {
+// 		if err == sql.ErrNoRows {
+// 			return nil // Username tidak ditemukan
+// 		}
+// 		panic(err)
+// 	}
+
+// 	return &user
+// }
+
+func FindOne(name string) (*domain.User, error) {
 	var db *sql.DB
-	row := db.QueryRow("SELECT name, password FROM users WHERE name = $1", username)
-
-	// Menginisialisasi variabel untuk menyimpan hasil kueri
+	query := `SELECT name, email, password, profile_picture, is_deleted FROM users WHERE name=$1;`
+	row := db.QueryRow(query, name)
 	var user domain.User
-
-	// Mengisi nilai-nilai pengguna dari hasil kueri
-	err := row.Scan(&user.Name, &user.Password)
+	err := row.Scan(&user.Name, &user.Email, &user.Password, &user.ProfilePicture, &user.IsDeleted)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil // Username tidak ditemukan
-		}
 		panic(err)
 	}
-
-	return &user
+	user.Name = name
+	return &user, nil
 }
