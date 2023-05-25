@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/KhoirulAziz99/final_project_e_wallet/internal/domain"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 )
@@ -49,24 +50,25 @@ type User struct {
 
 func LoginHandler(c *gin.Context) {
 
-	var user User
+	var user domain.User
 
 	if err := c.ShouldBind(&user); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// username := c.Request.FormValue("username")
-	// password := c.Request.FormValue("password")
+	username := c.Request.FormValue("name")
+	password := c.Request.FormValue("password")
 
+	userName := getUserByUsername(username)
 	//logic authentication(compare username and password)
-	if user.Username == "enigma" && user.Password == "1234" {
+	if userName != nil && user.Password == password {
 		//bikin code untuk generate token
 		token := jwt.New(jwt.SigningMethodHS256)
 
 		claims := token.Claims.(jwt.MapClaims) // ini map
 
-		claims["username"] = user.Username
+		claims["username"] = user.Name
 		claims["exp"] = time.Now().Add(time.Minute * 1).Unix() //token akan expired dalam 1 menit
 
 		tokenString, err := token.SignedString(jwtKey)
@@ -106,4 +108,24 @@ func LoginGPTHandler(db *sql.DB) gin.HandlerFunc {
 		// Login berhasil
 		c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("Login successful for user with ID %d", userID)})
 	}
+}
+
+func getUserByUsername(username string) *domain.User {
+	// Mengirimkan kueri ke database untuk mendapatkan informasi pengguna berdasarkan username
+	var db *sql.DB
+	row := db.QueryRow("SELECT name, password FROM users WHERE name = $1", username)
+
+	// Menginisialisasi variabel untuk menyimpan hasil kueri
+	var user domain.User
+
+	// Mengisi nilai-nilai pengguna dari hasil kueri
+	err := row.Scan(&user.Name, &user.Password)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil // Username tidak ditemukan
+		}
+		panic(err)
+	}
+
+	return &user
 }
