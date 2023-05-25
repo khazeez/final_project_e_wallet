@@ -3,22 +3,18 @@ package handler
 import (
 	"net/http"
 	"strconv"
-
 	"github.com/KhoirulAziz99/final_project_e_wallet/internal/app"
 	"github.com/KhoirulAziz99/final_project_e_wallet/internal/domain"
 	"github.com/gin-gonic/gin"
 )
-
 type UserHandler struct {
 	userUsecase app.UserUsecase
 }
-
 func NewUserHandler(userUsecase app.UserUsecase) *UserHandler {
 	return &UserHandler{
 		userUsecase: userUsecase,
 	}
 }
-
 func (h *UserHandler) InsertUser(c *gin.Context) {
 	var user domain.User
 	if err := c.ShouldBindJSON(&user); err != nil {
@@ -33,14 +29,12 @@ func (h *UserHandler) InsertUser(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, gin.H{"message": "User created successfully"})
 }
-
 func (h *UserHandler) UpdateUser(c *gin.Context) {
 	userID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
 		return
 	}
-
 	var user domain.User
 	if err := c.ShouldBindJSON(&user); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -52,10 +46,8 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
 	c.JSON(http.StatusOK, gin.H{"message": "User updated successfully"})
 }
-
 func (h *UserHandler) FindOneUser(c *gin.Context) {
 	userID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -68,7 +60,6 @@ func (h *UserHandler) FindOneUser(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
 	c.JSON(http.StatusOK, gin.H{"data": user})
 }
 

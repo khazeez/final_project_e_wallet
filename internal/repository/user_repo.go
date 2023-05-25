@@ -44,6 +44,7 @@ func (u userRepository) Update(updetedUser *domain.User) error {
 
 	return err
 }
+
 func (u *userRepository) Delete(id int) error {
 	query := `DELETE FROM users WHERE user_id = $1`
 	_, err := u.db.Exec(query, id)

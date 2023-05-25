@@ -14,17 +14,14 @@ type WithdrawRepository interface {
 	Update(withdrawal *domain.Withdrawal) error
 	Delete(withdrawalID int) error
 }
-
 type withdrawRepository struct {
 	db *sql.DB
 }
-
 func NewWithdrawRepository(db *sql.DB) WithdrawRepository {
 	return &withdrawRepository{
 		db: db,
 	}
 }
-
 func (r *withdrawRepository) Create(withdrawal *domain.Withdrawal) error {
 	// Cek apakah wallet dengan ID yang diberikan ada dalam database
 	query := "SELECT balance FROM Wallet WHERE wallet_id = ?"
