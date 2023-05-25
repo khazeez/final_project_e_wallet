@@ -52,16 +52,17 @@ func (u userRepository) Update(updetedUser *domain.User) error {
 	return err
 }
 
-func (u userRepository) Delete(id int) error {
-	query := `UPDATE users SET is_deleted = true WHERE user_id = $1`
+func (u *userRepository) Delete(id int) error {
+	query := `DELETE FROM users WHERE user_id = $1`
 	_, err := u.db.Exec(query, id)
 	if err != nil {
-		panic(err)
-	} else {
-		log.Println("Succsessfully deleted data")
+		log.Println("Failed to delete user:", err)
+		return err
 	}
-	return err
+	log.Println("Successfully deleted user")
+	return nil
 }
+
 
 func (u userRepository) FindOne(id int) (*domain.User, error) {
 	query := `SELECT name, email, password, profile_picture, is_deleted FROM users WHERE user_id=$1;`

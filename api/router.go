@@ -11,15 +11,11 @@ import (
 )
 
 func SetUpRouter(db *sql.DB) *gin.Engine {
-
 	userRepo := repository.NewUserRepository(db)
 	userService := app.NewUserUsecase(userRepo)
 	userHandler := handler.NewUserHandler(userService)
-
 	r := gin.Default()
-
 	apiV1 := r.Group("/api/v1")
-
 	userRouters := apiV1.Group("/users")
 	{
 		userRouters.POST("/login", pkg.LoginGPTHandler(db))
@@ -32,3 +28,4 @@ func SetUpRouter(db *sql.DB) *gin.Engine {
 
 	return r
 }
+

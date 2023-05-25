@@ -1,5 +1,6 @@
 package repository
 
+
 import (
 	"database/sql"
 	"fmt"
@@ -18,7 +19,6 @@ type WithdrawRepository interface {
 type withdrawRepository struct {
 	db *sql.DB
 }
-
 func NewWithdrawRepository(db *sql.DB) WithdrawRepository {
 	return &withdrawRepository{
 		db: db,
@@ -38,11 +38,12 @@ func (r *withdrawRepository) Create(withdrawal *domain.Withdrawal) error {
 		return fmt.Errorf("failed to get wallet balance: %v", err)
 	}
 
+
 	// Cek apakah saldo cukup untuk melakukan penarikan
 	if balance < float64(withdrawal.Amount) {
 		return fmt.Errorf("insufficient balance")
 	}
-
+	
 	// Kurangi saldo wallet sesuai dengan jumlah penarikan
 	newBalance := balance - float64(withdrawal.Amount)
 
@@ -53,15 +54,16 @@ func (r *withdrawRepository) Create(withdrawal *domain.Withdrawal) error {
 		return fmt.Errorf("failed to update wallet balance: %v", err)
 	}
 
+
 	// Simpan data withdrawal ke dalam tabel Withdrawal
 	insertQuery := "INSERT INTO Withdrawal (wallet_id, amount, timestamp) VALUES (?, ?, ?)"
 	_, err = r.db.Exec(insertQuery, withdrawal.WalletId, withdrawal.Amount, withdrawal.Timestamp)
 	if err != nil {
 		return fmt.Errorf("failed to create withdrawal: %v", err)
 	}
-
 	return nil
 }
+
 
 func (r *withdrawRepository) FindOne(withdrawalID int) (*domain.Withdrawal, error) {
 	query := "SELECT withdrawal_id, wallet_id, amount, timestamp FROM Withdrawal WHERE withdrawal_id = ?"
@@ -94,9 +96,9 @@ func (r *withdrawRepository) FindAll() ([]*domain.Withdrawal, error) {
 		}
 		withdrawals = append(withdrawals, withdrawal)
 	}
-
 	return withdrawals, nil
 }
+
 
 func (r *withdrawRepository) Update(withdrawal *domain.Withdrawal) error {
 	updateQuery := "UPDATE Withdrawal SET wallet_id = ?, amount = ?, timestamp = ? WHERE withdrawal_id = ?"
