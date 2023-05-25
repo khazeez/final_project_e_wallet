@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 	"github.com/KhoirulAziz99/final_project_e_wallet/internal/app"
