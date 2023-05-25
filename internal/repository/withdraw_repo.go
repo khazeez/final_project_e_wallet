@@ -1,12 +1,9 @@
 package repository
-
 import (
 	"database/sql"
 	"fmt"
-
 	"github.com/KhoirulAziz99/final_project_e_wallet/internal/domain"
 )
-
 type WithdrawRepository interface {
 	Create(withdrawal *domain.Withdrawal) error
 	FindOne(withdrawalID int) (*domain.Withdrawal, error)
@@ -34,29 +31,25 @@ func (r *withdrawRepository) Create(withdrawal *domain.Withdrawal) error {
 		}
 		return fmt.Errorf("failed to get wallet balance: %v", err)
 	}
-
 	// Cek apakah saldo cukup untuk melakukan penarikan
 	if balance < float64(withdrawal.Amount) {
 		return fmt.Errorf("insufficient balance")
 	}
-
+	
 	// Kurangi saldo wallet sesuai dengan jumlah penarikan
 	newBalance := balance - float64(withdrawal.Amount)
-
 	// Update saldo pada tabel wallet
 	updateQuery := "UPDATE Wallet SET balance = ? WHERE wallet_id = ?"
 	_, err = r.db.Exec(updateQuery, newBalance, withdrawal.WalletId)
 	if err != nil {
 		return fmt.Errorf("failed to update wallet balance: %v", err)
 	}
-
 	// Simpan data withdrawal ke dalam tabel Withdrawal
 	insertQuery := "INSERT INTO Withdrawal (wallet_id, amount, timestamp) VALUES (?, ?, ?)"
 	_, err = r.db.Exec(insertQuery, withdrawal.WalletId, withdrawal.Amount, withdrawal.Timestamp)
 	if err != nil {
 		return fmt.Errorf("failed to create withdrawal: %v", err)
 	}
-
 	return nil
 }
 
@@ -91,7 +84,6 @@ func (r *withdrawRepository) FindAll() ([]*domain.Withdrawal, error) {
 		}
 		withdrawals = append(withdrawals, withdrawal)
 	}
-
 	return withdrawals, nil
 }
 
