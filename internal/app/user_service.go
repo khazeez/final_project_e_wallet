@@ -23,7 +23,6 @@ func NewUserUsecase(userRepository repository.UserRepository) UserUsecase {
 		userRepository: userRepository,
 	}
 }
-
 func (u *userUsecase) InsertUser(user *domain.User) error {
 
 	if user.Name == "" {

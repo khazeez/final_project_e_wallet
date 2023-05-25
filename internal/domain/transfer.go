@@ -8,6 +8,6 @@ type Transfer struct {
 	ID int `json:"id"`
 	SenderId Wallet `json:"sender_id"`
 	ReceiferId Wallet `json:"receifer_id"`
-	Amount int64 `json:"amount"`
+	Amount float64 `json:"amount"`
 	Timestamp time.Time `json:"time"`
 }

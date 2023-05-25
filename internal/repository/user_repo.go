@@ -27,7 +27,6 @@ func NewUserRepository(db *sql.DB) *userRepository {
 func (u userRepository) Create(newUser *domain.User) error {
 	query := `INSERT INTO users (user_id, name, email, password, profile_picture) VALUES ($1, $2, $3, $4, $5)`
 	hashedPassword, errr := bcrypt.GenerateFromPassword([]byte(newUser.Password), bcrypt.DefaultCost)
-
 	if errr != nil {
 		panic(errr)
 	}
