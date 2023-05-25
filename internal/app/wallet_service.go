@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 )
+
 type WalletUsecase interface {
 	CreateWallet(wallet *domain.Wallet) error
 	GetWalletByID(walletID int) (*domain.Wallet, error)
