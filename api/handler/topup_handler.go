@@ -1,10 +1,12 @@
 package handler
 
 import (
-	"encoding/json"
-	"fmt"
+
 	"net/http"
+	"strconv"
 	"github.com/KhoirulAziz99/final_project_e_wallet/internal/app"
+
+	"github.com/gin-gonic/gin"
 	"github.com/KhoirulAziz99/final_project_e_wallet/internal/domain"
 )
 
@@ -18,129 +20,86 @@ func NewTopupHandler(topupUsecase app.TopupUsecase) *TopupHandler {
 	}
 }
 
-func (h *TopupHandler) CreateTopup(w http.ResponseWriter, r *http.Request) {
+func (h *TopupHandler) CreateTopup(c *gin.Context) {
 	var topup domain.TopUp
-	err := json.NewDecoder(r.Body).Decode(&topup)
-	if err != nil {
-		h.handleError(w, http.StatusBadRequest, "Invalid request payload")
+	if err := c.ShouldBindJSON(&topup); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	err = h.topupUsecase.CreateTopup(&topup)
-	if err != nil {
-		h.handleError(w, http.StatusInternalServerError, fmt.Sprintf("Failed to create top-up: %v", err))
+	if err := h.topupUsecase.CreateTopup(&topup); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	h.handleSuccess(w, http.StatusCreated, "Top-up created successfully")
+	c.JSON(http.StatusCreated, gin.H{"message": "Topup created successfully"})
 }
 
-func (h *TopupHandler) GetTopupByID(w http.ResponseWriter, r *http.Request) {
-	// Parse topupID from request parameters
-	topupID := parseTopupID(r)
-	if topupID == 0 {
-		h.handleError(w, http.StatusBadRequest, "Invalid top-up ID")
+func (h *TopupHandler) GetTopupByID(c *gin.Context) {
+	topupID, err := strconv.Atoi(c.Param("topupID"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid topup ID"})
 		return
 	}
 
 	topup, err := h.topupUsecase.GetTopupByID(topupID)
 	if err != nil {
-		h.handleError(w, http.StatusInternalServerError, fmt.Sprintf("Failed to get top-up: %v", err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	h.handleSuccess(w, http.StatusOK, topup)
+	c.JSON(http.StatusOK, topup)
 }
 
-func (h *TopupHandler) UpdateTopup(w http.ResponseWriter, r *http.Request) {
-	// Parse topupID from request parameters
-	topupID := parseTopupID(r)
-	if topupID == 0 {
-		h.handleError(w, http.StatusBadRequest, "Invalid top-up ID")
+func (h *TopupHandler) UpdateTopup(c *gin.Context) {
+	topupID, err := strconv.Atoi(c.Param("topupID"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid topup ID"})
 		return
 	}
 
 	var topup domain.TopUp
-	err := json.NewDecoder(r.Body).Decode(&topup)
-	if err != nil {
-		h.handleError(w, http.StatusBadRequest, "Invalid request payload")
+	if err := c.ShouldBindJSON(&topup); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	topup.ID = topupID
 
-	err = h.topupUsecase.UpdateTopup(&topup)
-	if err != nil {
-		h.handleError(w, http.StatusInternalServerError, fmt.Sprintf("Failed to update top-up: %v", err))
+	if err := h.topupUsecase.UpdateTopup(&topup); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	h.handleSuccess(w, http.StatusOK, "Top-up updated successfully")
+	c.JSON(http.StatusOK, gin.H{"message": "Topup updated successfully"})
 }
 
-func (h *TopupHandler) DeleteTopup(w http.ResponseWriter, r *http.Request) {
-	// Parse topupID from request parameters
-	topupID := parseTopupID(r)
-	if topupID == 0 {
-		h.handleError(w, http.StatusBadRequest, "Invalid top-up ID")
-		return
-	}
-
-	err := h.topupUsecase.DeleteTopup(topupID)
+func (h *TopupHandler) DeleteTopup(c *gin.Context) {
+	topupID, err := strconv.Atoi(c.Param("topupID"))
 	if err != nil {
-		h.handleError(w, http.StatusInternalServerError, fmt.Sprintf("Failed to delete top-up: %v", err))
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid topup ID"})
 		return
 	}
 
-	h.handleSuccess(w, http.StatusOK, "Top-up deleted successfully")
+	if err := h.topupUsecase.DeleteTopup(topupID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Topup deleted successfully"})
 }
 
-func (h *TopupHandler) GetLastTopupAmount(w http.ResponseWriter, r *http.Request) {
-	// Parse walletID from request parameters
-	walletID := parseWalletID(r)
-	if walletID == 0 {
-		h.handleError(w, http.StatusBadRequest, "Invalid wallet ID")
+func (h *TopupHandler) GetLastTopupAmount(c *gin.Context) {
+	walletID, err := strconv.Atoi(c.Param("walletID"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid wallet ID"})
 		return
 	}
 
 	amount, err := h.topupUsecase.GetLastTopupAmount(walletID)
 	if err != nil {
-		h.handleError(w, http.StatusInternalServerError, fmt.Sprintf("Failed to get last top-up amount: %v", err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	response := struct {
-		Amount float64 `json:"amount"`
-	}{
-		Amount: amount,
-	}
-
-	h.handleSuccess(w, http.StatusOK, response)
-}
-
-func (h *TopupHandler) handleError(w http.ResponseWriter, statusCode int, message string) {
-	response := struct {
-		Error string `json:"error"`
-	}{
-		Error: message,
-	}
-
-	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(response)
-}
-
-func (h *TopupHandler) handleSuccess(w http.ResponseWriter, statusCode int, data interface{}) {
-	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(data)
-}
-
-func parseTopupID(r *http.Request) int {
-	// Parse topupID from request parameters or body, depending on your implementation
-	// Return 0 if topupID is not found or invalid
-	return 0
-}
-
-func parseWalletID(r *http.Request) int {
-	// Parse walletID from request parameters or body, depending on your implementation
-	// Return 0 if walletID is not found or invalid
-	return 0
+	c.JSON(http.StatusOK, gin.H{"amount": amount})
 }

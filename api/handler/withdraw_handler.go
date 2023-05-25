@@ -1,88 +1,103 @@
 package handler
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
 
+	"github.com/gin-gonic/gin"
 	"github.com/KhoirulAziz99/final_project_e_wallet/internal/app"
 	"github.com/KhoirulAziz99/final_project_e_wallet/internal/domain"
 )
 
-type WithdrawHandler struct {
-	withdrawUsecase app.WithdrawUsecase
+type WithdrawalHandler struct {
+	withdrawalUsecase app.WithdrawUsecase
 }
 
-func NewWithdrawHandler(withdrawUsecase app.WithdrawUsecase) *WithdrawHandler {
-	return &WithdrawHandler{
-		withdrawUsecase: withdrawUsecase,
+func NewWithdrawalHandler(withdrawalUsecase app.WithdrawUsecase) *WithdrawalHandler {
+	return &WithdrawalHandler{
+		withdrawalUsecase: withdrawalUsecase,
 	}
 }
 
-func (h *WithdrawHandler) CreateWithdrawal(w http.ResponseWriter, r *http.Request) {
+func (h *WithdrawalHandler) CreateWithdrawal(c *gin.Context) {
 	var withdrawal domain.Withdrawal
-	err := json.NewDecoder(r.Body).Decode(&withdrawal)
-	if err != nil {
-		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+	if err := c.ShouldBindJSON(&withdrawal); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	err = h.withdrawUsecase.MakeWithdrawal(&withdrawal)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err := h.withdrawalUsecase.CreateWithdrawal(&withdrawal); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
+	c.JSON(http.StatusCreated, gin.H{"message": "Withdrawal created successfully"})
 }
 
-func (h *WithdrawHandler) GetWithdrawalByID(w http.ResponseWriter, r *http.Request) {
-	withdrawalIDStr := r.URL.Query().Get("withdrawal_id")
-	withdrawalID, err := strconv.Atoi(withdrawalIDStr)
+func (h *WithdrawalHandler) GetWithdrawalByID(c *gin.Context) {
+	withdrawalID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		http.Error(w, "Invalid withdrawal ID", http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid withdrawal ID"})
 		return
 	}
 
-	withdrawal, err := h.withdrawUsecase.GetWithdrawalByID(withdrawalID)
+	withdrawal, err := h.withdrawalUsecase.GetWithdrawalByID(withdrawalID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	json.NewEncoder(w).Encode(withdrawal)
+	c.JSON(http.StatusOK, withdrawal)
 }
 
-func (h *WithdrawHandler) UpdateWithdrawal(w http.ResponseWriter, r *http.Request) {
+func (h *WithdrawalHandler) UpdateWithdrawal(c *gin.Context) {
+	withdrawalID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid withdrawal ID"})
+		return
+	}
+
 	var withdrawal domain.Withdrawal
-	err := json.NewDecoder(r.Body).Decode(&withdrawal)
-	if err != nil {
-		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+	if err := c.ShouldBindJSON(&withdrawal); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	withdrawal.ID = withdrawalID
+
+	if err := h.withdrawalUsecase.UpdateWithdrawal(&withdrawal); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	err = h.withdrawUsecase.UpdateWithdrawal(&withdrawal)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
+	c.JSON(http.StatusOK, gin.H{"message": "Withdrawal updated successfully"})
 }
 
-func (h *WithdrawHandler) DeleteWithdrawal(w http.ResponseWriter, r *http.Request) {
-	withdrawalIDStr := r.URL.Query().Get("withdrawal_id")
-	withdrawalID, err := strconv.Atoi(withdrawalIDStr)
+func (h *WithdrawalHandler) DeleteWithdrawal(c *gin.Context) {
+	withdrawalID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		http.Error(w, "Invalid withdrawal ID", http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid withdrawal ID"})
 		return
 	}
 
-	err = h.withdrawUsecase.DeleteWithdrawal(withdrawalID)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err := h.withdrawalUsecase.DeleteWithdrawal(withdrawalID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	c.JSON(http.StatusOK, gin.H{"message": "Withdrawal deleted successfully"})
+}
+
+func (h *WithdrawalHandler) MakeWithdrawal(c *gin.Context) {
+	var withdrawal domain.Withdrawal
+	if err := c.ShouldBindJSON(&withdrawal); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := h.withdrawalUsecase.MakeWithdrawal(&withdrawal); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Withdrawal made successfully"})
 }
