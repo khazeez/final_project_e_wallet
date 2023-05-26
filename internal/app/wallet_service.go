@@ -36,11 +36,9 @@ func (u *walletUsecase) UpdateWalletBalanceUpdate(wallet *domain.Wallet) error {
 	if err != nil {
 		return fmt.Errorf("failed to get top-up amount: %v", err)
 	}
-
 	if topupAmount == 0 {
 		return errors.New("balance amount must be greater than 0")
 	}
-
 	wallet.Balance += topupAmount
 
 	err = u.walletRepository.Update(wallet)

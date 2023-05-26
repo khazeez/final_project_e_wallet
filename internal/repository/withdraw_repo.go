@@ -21,8 +21,8 @@ func NewWithdrawRepository(db *sql.DB) WithdrawRepository {
 }
 func (r *withdrawRepository) Create(withdrawal *domain.Withdrawal) error {
 	// Cek apakah wallet dengan ID yang diberikan ada dalam database
-	query := "SELECT balance FROM Wallet WHERE wallet_id = ?"
-	row := r.db.QueryRow(query, withdrawal.WalletId)
+	query := "SELECT balance FROM Wallet WHERE wallet_id = $1"
+	row := r.db.QueryRow(query, withdrawal.WalletId.ID)
 	var balance float64
 	err := row.Scan(&balance)
 	if err != nil {
@@ -39,14 +39,14 @@ func (r *withdrawRepository) Create(withdrawal *domain.Withdrawal) error {
 	// Kurangi saldo wallet sesuai dengan jumlah penarikan
 	newBalance := balance - float64(withdrawal.Amount)
 	// Update saldo pada tabel wallet
-	updateQuery := "UPDATE Wallet SET balance = ? WHERE wallet_id = ?"
-	_, err = r.db.Exec(updateQuery, newBalance, withdrawal.WalletId)
+	updateQuery := "UPDATE Wallet SET balance = $1 WHERE wallet_id = $2"
+	_, err = r.db.Exec(updateQuery, newBalance, withdrawal.WalletId.ID)
 	if err != nil {
 		return fmt.Errorf("failed to update wallet balance: %v", err)
 	}
 	// Simpan data withdrawal ke dalam tabel Withdrawal
-	insertQuery := "INSERT INTO Withdrawal (wallet_id, amount, timestamp) VALUES (?, ?, ?)"
-	_, err = r.db.Exec(insertQuery, withdrawal.WalletId, withdrawal.Amount, withdrawal.Timestamp)
+	insertQuery := "INSERT INTO Withdrawal (wallet_id, amount, timestamp) VALUES ($1, $2, $3)"
+	_, err = r.db.Exec(insertQuery, withdrawal.WalletId.ID, withdrawal.Amount, withdrawal.Timestamp)
 	if err != nil {
 		return fmt.Errorf("failed to create withdrawal: %v", err)
 	}
