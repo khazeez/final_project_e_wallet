@@ -15,6 +15,7 @@ type UserRepository interface {
 	Delete(id int) error
 	FindOne(id int) (*domain.User, error)
 	FindAll() ([]domain.User, error)
+	Updatefile(updetedUser *domain.User) error 
 }
 
 type userRepository struct {
@@ -44,6 +45,17 @@ func (u userRepository) Create(newUser *domain.User) error {
 func (u userRepository) Update(updetedUser *domain.User) error {
 	query := `UPDATE users SET name=$2, email=$3, password=$4, profile_picture=$5 WHERE user_id=$1`
 	_, err := u.db.Exec(query, updetedUser.ID, updetedUser.Name, updetedUser.Email, updetedUser.Password, updetedUser.ProfilePicture)
+	if err != nil {
+		panic(err)
+	} else {
+		log.Println("Succsessfully updated")
+	}
+
+	return err
+}
+func (u userRepository) Updatefile(updetedUser *domain.User) error {
+	query := `UPDATE users SET profile_picture = 'cmd/' || $1 || '.jpg' WHERE id = $2`
+_, err := u.db.Exec(query, updetedUser.ID, updetedUser.ID)
 	if err != nil {
 		panic(err)
 	} else {

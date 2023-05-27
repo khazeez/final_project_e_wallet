@@ -29,6 +29,9 @@ func SetUpRouter(db *sql.DB) *gin.Engine {
 	withdrawalRepo := repository.NewWithdrawRepository(db)
 	withdrawalService := app.NewWithdrawUsecase(withdrawalRepo,walletRepo)
 	withdrawalHandler := handler.NewWithdrawalHandler(withdrawalService)
+	transactionRepo := repository.NewTransactionRepository(db)
+	transactionService := app.NewTransactionUsecase(transactionRepo)
+	transactionHandler := handler.NewTransactionHandler(transactionService)
 
 	r := gin.Default()
 
@@ -42,6 +45,7 @@ func SetUpRouter(db *sql.DB) *gin.Engine {
 		userRouters.DELETE("/:id", userHandler.DeleteUser)
 		userRouters.GET("/:id", userHandler.FindOneUser)
 		userRouters.GET("/", userHandler.FindAllUsers)
+		userRouters.PUT("/:id/profile-picture", userHandler.UpdateProfilePicture)
 	}
 
 	paymentRouters := apiV1.Group("/payments")
@@ -87,6 +91,10 @@ func SetUpRouter(db *sql.DB) *gin.Engine {
 		withdrawalRouters.DELETE("/:id", withdrawalHandler.DeleteWithdrawal)
 		withdrawalRouters.POST("/make-withdrawal", withdrawalHandler.MakeWithdrawal)
 	}
-
+	transactionRouters := apiV1.Group("/transactions")
+	{
+		transactionRouters.POST("/transactions", transactionHandler.CreateTransaction)
+		transactionRouters.GET("/wallets/:wallet_id/transactions", transactionHandler.GetTransactionsByWalletID)
+	}
 	return r
 }

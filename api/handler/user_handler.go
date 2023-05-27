@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 	"strconv"
+	"fmt"
 	"github.com/KhoirulAziz99/final_project_e_wallet/internal/app"
 	"github.com/KhoirulAziz99/final_project_e_wallet/internal/domain"
 	"github.com/gin-gonic/gin"
@@ -87,3 +88,38 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "User deleted successfully"})
 }
+func (h *UserHandler) UpdateProfilePicture(c *gin.Context) {
+	// Get user ID from path parameter
+	userID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	// Get the uploaded file from the request
+	file, err := c.FormFile("profile_picture")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Profile picture is required"})
+		return
+	}
+
+	// Generate a new file name
+	newFileName := fmt.Sprintf("cmd/%d.jpg", userID)
+
+	// Save the uploaded file to the specified path
+	if err := c.SaveUploadedFile(file, newFileName); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save profile picture"})
+		return
+	}
+
+
+	// Update profile picture in the repository
+	err = h.userUsecase.UpdateProfilePicture(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Profile picture updated successfully"})
+}
+
