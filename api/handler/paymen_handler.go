@@ -88,17 +88,17 @@ func (h *PaymentHandler) DeletePayment(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Payment deleted successfully"})
 }
 
-func (h *PaymentHandler) MakePayment(c *gin.Context) {
-	var payment domain.Payment
-	if err := c.ShouldBindJSON(&payment); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+// func (h *PaymentHandler) MakePayment(c *gin.Context) {
+// 	var payment domain.Payment
+// 	if err := c.ShouldBindJSON(&payment); err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+// 		return
+// 	}
 
-	if err := h.paymentUsecase.MakePayment(&payment); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
+// 	if err := h.paymentUsecase.MakePayment(&payment); err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+// 		return
+// 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Payment made successfully"})
-}
+// 	c.JSON(http.StatusOK, gin.H{"message": "Payment made successfully"})
+// }

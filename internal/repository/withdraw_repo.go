@@ -1,9 +1,12 @@
 package repository
+
 import (
 	"database/sql"
 	"fmt"
+
 	"github.com/KhoirulAziz99/final_project_e_wallet/internal/domain"
 )
+
 type WithdrawRepository interface {
 	Create(withdrawal *domain.Withdrawal) error
 	FindOne(withdrawalID int) (*domain.Withdrawal, error)
@@ -14,6 +17,7 @@ type WithdrawRepository interface {
 type withdrawRepository struct {
 	db *sql.DB
 }
+
 func NewWithdrawRepository(db *sql.DB) WithdrawRepository {
 	return &withdrawRepository{
 		db: db,
@@ -35,18 +39,19 @@ func (r *withdrawRepository) Create(withdrawal *domain.Withdrawal) error {
 	if balance < float64(withdrawal.Amount) {
 		return fmt.Errorf("insufficient balance")
 	}
-	
+
 	// Kurangi saldo wallet sesuai dengan jumlah penarikan
-	newBalance := balance - float64(withdrawal.Amount)
+	// newBalance := balance - float64(withdrawal.Amount)
 	// Update saldo pada tabel wallet
-	updateQuery := "UPDATE Wallet SET balance = $1 WHERE wallet_id = $2"
-	_, err = r.db.Exec(updateQuery, newBalance, withdrawal.WalletId.ID)
+	balance = 0
+	updateQuery := "UPDATE Wallet SET balance = balance - $1 WHERE wallet_id = $2"
+	_, err = r.db.Exec(updateQuery, withdrawal.Amount, withdrawal.WalletId.ID)
 	if err != nil {
 		return fmt.Errorf("failed to update wallet balance: %v", err)
 	}
 	// Simpan data withdrawal ke dalam tabel Withdrawal
-	insertQuery := "INSERT INTO Withdrawal (wallet_id, amount, timestamp) VALUES ($1, $2, $3)"
-	_, err = r.db.Exec(insertQuery, withdrawal.WalletId.ID, withdrawal.Amount, withdrawal.Timestamp)
+	insertQuery := "INSERT INTO Withdrawal (withdrawal_id, wallet_id, amount, timestamp) VALUES ($1, $2, $3, $4)"
+	_, err = r.db.Exec(insertQuery, withdrawal.ID, withdrawal.WalletId.ID, withdrawal.Amount, withdrawal.Timestamp)
 	if err != nil {
 		return fmt.Errorf("failed to create withdrawal: %v", err)
 	}
@@ -54,17 +59,45 @@ func (r *withdrawRepository) Create(withdrawal *domain.Withdrawal) error {
 }
 
 func (r *withdrawRepository) FindOne(withdrawalID int) (*domain.Withdrawal, error) {
-	query := "SELECT withdrawal_id, wallet_id, amount, timestamp FROM Withdrawal WHERE withdrawal_id = ?"
+	query := `
+	SELECT t.withdrawal_id, t.amount, w.wallet_id, u.user_id, u.name, u.email, u.password, u.profile_picture, u.is_deleted, w.balance
+	FROM withdrawal t
+	JOIN Wallet w ON t.wallet_id = w.wallet_id
+	JOIN users u ON w.user_id = u.user_id
+	WHERE t.withdrawal_id = $1
+	`
+
 	row := r.db.QueryRow(query, withdrawalID)
 	withdrawal := &domain.Withdrawal{}
-	err := row.Scan(&withdrawal.ID, &withdrawal.WalletId, &withdrawal.Amount, &withdrawal.Timestamp)
+	wallet := &domain.Wallet{}
+	user := &domain.User{}
+
+	err := row.Scan(
+		&withdrawal.ID,
+		&withdrawal.Amount,
+		&wallet.ID,
+		&user.ID,
+		&user.Name,
+		&user.Email,
+		&user.Password,
+		&user.ProfilePicture,
+		&user.IsDeleted,
+		&wallet.Balance,
+	)
+
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, fmt.Errorf("withdrawal not found")
 		}
-		return nil, fmt.Errorf("failed to get withdrawal: %v", err)
+		return nil, fmt.Errorf("failed to find withdrawal: %v", err)
 	}
+
+	// Set user to wallet's UserId
+	wallet.UserId = *user
+	// Set wallet to topup's WalletId
+	withdrawal.WalletId = *wallet
 	return withdrawal, nil
+
 }
 
 func (r *withdrawRepository) FindAll() ([]*domain.Withdrawal, error) {
@@ -88,8 +121,8 @@ func (r *withdrawRepository) FindAll() ([]*domain.Withdrawal, error) {
 }
 
 func (r *withdrawRepository) Update(withdrawal *domain.Withdrawal) error {
-	updateQuery := "UPDATE Withdrawal SET wallet_id = ?, amount = ?, timestamp = ? WHERE withdrawal_id = ?"
-	_, err := r.db.Exec(updateQuery, withdrawal.WalletId, withdrawal.Amount, withdrawal.Timestamp, withdrawal.ID)
+	updateQuery := "UPDATE Withdrawal SET wallet_id = $1 WHERE withdrawal_id = $2"
+	_, err := r.db.Exec(updateQuery, withdrawal.WalletId.ID, withdrawal.ID)
 	if err != nil {
 		return fmt.Errorf("failed to update withdrawal: %v", err)
 	}
@@ -97,7 +130,7 @@ func (r *withdrawRepository) Update(withdrawal *domain.Withdrawal) error {
 }
 
 func (r *withdrawRepository) Delete(withdrawalID int) error {
-	deleteQuery := "DELETE FROM Withdrawal WHERE withdrawal_id = ?"
+	deleteQuery := "DELETE FROM Withdrawal WHERE withdrawal_id = $1"
 	_, err := r.db.Exec(deleteQuery, withdrawalID)
 	if err != nil {
 		return fmt.Errorf("failed to delete withdrawal: %v", err)

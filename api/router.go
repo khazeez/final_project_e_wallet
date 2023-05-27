@@ -18,16 +18,16 @@ func SetUpRouter(db *sql.DB) *gin.Engine {
 	topupService := app.NewTopupUsecase(topupRepo)
 	topupHandler := handler.NewTopupHandler(topupService)
 	walletRepo := repository.NewWalletRepository(db)
-	walletService := app.NewWalletUsecase(walletRepo,topupRepo)
+	walletService := app.NewWalletUsecase(walletRepo, topupRepo)
 	walletHandler := handler.NewWalletHandler(walletService)
 	paymentRepo := repository.NewPaymentRepository(db)
 	paymentService := app.NewPaymentUsecase(paymentRepo, walletRepo)
 	paymentHandler := handler.NewPaymentHandler(paymentService)
-	transferRepo := repository.NewTransferRepository(db,walletRepo)
-	transferService := app.NewTransferUsecase(transferRepo,walletRepo)
+	transferRepo := repository.NewTransferRepository(db, walletRepo)
+	transferService := app.NewTransferUsecase(transferRepo, walletRepo)
 	transferHandler := handler.NewTransferHandler(transferService)
 	withdrawalRepo := repository.NewWithdrawRepository(db)
-	withdrawalService := app.NewWithdrawUsecase(withdrawalRepo,walletRepo)
+	withdrawalService := app.NewWithdrawUsecase(withdrawalRepo, walletRepo)
 	withdrawalHandler := handler.NewWithdrawalHandler(withdrawalService)
 
 	r := gin.Default()
@@ -36,7 +36,9 @@ func SetUpRouter(db *sql.DB) *gin.Engine {
 
 	userRouters := apiV1.Group("/users")
 	{
-		userRouters.POST("/login", pkg.LoginGPTHandler(db))
+		userRouters.POST("/login", userHandler.Login)
+		userRouters.Use(pkg.AuthMiddleware())
+		userRouters.GET("/profile", handler.ProfileHandler)
 		userRouters.POST("/", userHandler.InsertUser)
 		userRouters.PUT("/:id", userHandler.UpdateUser)
 		userRouters.DELETE("/:id", userHandler.DeleteUser)
@@ -50,7 +52,7 @@ func SetUpRouter(db *sql.DB) *gin.Engine {
 		paymentRouters.GET("/:paymentID", paymentHandler.GetPaymentByID)
 		paymentRouters.PUT("/:paymentID", paymentHandler.UpdatePayment)
 		paymentRouters.DELETE("/:paymentID", paymentHandler.DeletePayment)
-		paymentRouters.POST("/make-payment", paymentHandler.MakePayment)
+		// paymentRouters.POST("/make-payment", paymentHandler.MakePayment)
 	}
 
 	topupRouters := apiV1.Group("/topups")
@@ -83,9 +85,9 @@ func SetUpRouter(db *sql.DB) *gin.Engine {
 	{
 		withdrawalRouters.POST("/", withdrawalHandler.CreateWithdrawal)
 		withdrawalRouters.GET("/:id", withdrawalHandler.GetWithdrawalByID)
-		withdrawalRouters.PUT("/:id", withdrawalHandler.UpdateWithdrawal)
+		// withdrawalRouters.PUT("/:id", withdrawalHandler.UpdateWithdrawal)
 		withdrawalRouters.DELETE("/:id", withdrawalHandler.DeleteWithdrawal)
-		withdrawalRouters.POST("/make-withdrawal", withdrawalHandler.MakeWithdrawal)
+		// withdrawalRouters.POST("/:make-withdrawal", withdrawalHandler.MakeWithdrawal)
 	}
 
 	return r

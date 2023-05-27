@@ -35,6 +35,7 @@ func (r *topupRepository) Create(topup *domain.TopUp) error {
 	}
 
 	// Simpan data top-up ke dalam tabel TopUp
+	
 	insertQuery := "INSERT INTO TopUp (topup_id, wallet_id, amount) VALUES ($1, $2, $3)"
 	_, err = r.db.Exec(insertQuery, topup.ID, topup.WalletId.ID, topup.Amount)
 	if err != nil {
