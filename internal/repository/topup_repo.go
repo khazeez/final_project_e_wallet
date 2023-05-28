@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/KhoirulAziz99/final_project_e_wallet/internal/domain"
 )
@@ -12,6 +13,7 @@ type TopupRepository interface {
 	FindOne(walletID int) (*domain.TopUp, error)
 	Update(*domain.TopUp) error
 	Delete(walletID int) error
+	HistoryTopup(wallet_id int) ([]*domain.TopUp, error)
 	GetLastTopupAmount(walletID int) (float64, error)
 }
 
@@ -34,9 +36,9 @@ func (r *topupRepository) Create(topup *domain.TopUp) error {
 	}
 
 	// Simpan data top-up ke dalam tabel TopUp
-
-	insertQuery := "INSERT INTO TopUp (topup_id, wallet_id, amount) VALUES ($1, $2, $3)"
-	_, err = r.db.Exec(insertQuery, topup.ID, topup.WalletId.ID, topup.Amount)
+	time := time.Now()
+	insertQuery := "INSERT INTO TopUp (topup_id, wallet_id, amount, timestamp) VALUES ($1, $2, $3, $4)"
+	_, err = r.db.Exec(insertQuery, topup.ID, topup.WalletId.ID, topup.Amount, time)
 	if err != nil {
 		return fmt.Errorf("failed to create top-up: %v", err)
 	}
@@ -60,7 +62,7 @@ func (r *topupRepository) GetLastTopupAmount(walletID int) (float64, error) {
 
 func (r *topupRepository) FindOne(topupID int) (*domain.TopUp, error) {
 	query := `
-		SELECT t.topup_id, t.amount, w.wallet_id, u.user_id, u.name, u.email, u.password, u.profile_picture, u.is_deleted, w.balance
+		SELECT t.topup_id, t.amount, t.timestamp, w.wallet_id, u.user_id, u.name, u.email, u.password, u.profile_picture, u.is_deleted, w.balance
 		FROM TopUp t
 		JOIN Wallet w ON t.wallet_id = w.wallet_id
 		JOIN users u ON w.user_id = u.user_id
@@ -75,6 +77,7 @@ func (r *topupRepository) FindOne(topupID int) (*domain.TopUp, error) {
 	err := row.Scan(
 		&topup.ID,
 		&topup.Amount,
+		&topup.Timestamp,
 		&wallet.ID,
 		&user.ID,
 		&user.Name,
@@ -83,6 +86,7 @@ func (r *topupRepository) FindOne(topupID int) (*domain.TopUp, error) {
 		&user.ProfilePicture,
 		&user.IsDeleted,
 		&wallet.Balance,
+		
 	)
 
 	if err != nil {
@@ -130,6 +134,48 @@ func (r *topupRepository) Delete(topupID int) error {
 		return fmt.Errorf("failed to delete top-up: %v", err)
 	}
 	return nil
+}
+
+func (r *topupRepository) HistoryTopup(wallet_id int) ([]*domain.TopUp, error) {
+	query := `SELECT t.topup_id, t.amount, w.wallet_id, u.user_id, u.name, u.email, u.password, u.profile_picture, u.is_deleted, w.balance FROM topup t
+	 	JOIN Wallet w ON t.wallet_id = w.wallet_id
+	 	JOIN users u ON w.user_id = u.user_id
+	 	WHERE t.wallet_id = $1`
+
+	rows, err := r.db.Query(query, wallet_id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get withdrawals: %v", err)
+	}
+	defer rows.Close()
+
+	topups := []*domain.TopUp{}
+	wallet := &domain.Wallet{}
+	user := &domain.User{}
+
+	for rows.Next() {
+		topup := &domain.TopUp{}
+		err := rows.Scan(
+	&topup.ID,
+	&topup.Amount,
+	&wallet.ID,
+	&user.ID,
+ 	&user.Name,
+	&user.Email,
+	&user.Password,
+	&user.ProfilePicture,
+	&user.IsDeleted,
+	&wallet.Balance,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan withdrawal row: %v", err)
+		}
+
+	wallet.UserId = *user
+	topup.WalletId = *wallet
+
+	topups = append(topups, topup)
+	}
+	return topups, nil
 }
 
 

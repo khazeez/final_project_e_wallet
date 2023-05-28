@@ -68,5 +68,5 @@ func (u *withdrawUsecase) MakeWithdrawal(withdrawal *domain.Withdrawal) error {
 
 
 func (u *withdrawUsecase) HistoryTransaction(withdrawalID int) ([]*domain.Withdrawal, error) {
-	return u.withdrawRepository.History(withdrawalID)
+	return u.withdrawRepository.HistoryWithdrawal(withdrawalID)
 }

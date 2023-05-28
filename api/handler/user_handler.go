@@ -119,7 +119,7 @@ func (h *UserHandler) Login(c *gin.Context) {
 	claims := token.Claims.(jwt.MapClaims)
 
 	claims["username"] = user.Username
-	claims["exp"] = time.Now().Add(time.Minute * 5).Unix()
+	claims["exp"] = time.Now().Add(time.Hour * 24).Unix()
 	tokenString, err := token.SignedString([]byte(os.Getenv("SECRET")))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

@@ -12,6 +12,7 @@ type PaymentUsecase interface {
 	GetPaymentByID(paymentID int) (*domain.Payment, error)
 	UpdatePayment(payment *domain.Payment) error
 	DeletePayment(paymentID int) error
+	HistoryTransaction(paymentID int) ([]*domain.Payment, error)
 	// MakePayment(payment *domain.Payment) error
 }
 
@@ -41,6 +42,10 @@ func (u *paymentUsecase) UpdatePayment(payment *domain.Payment) error {
 
 func (u *paymentUsecase) DeletePayment(paymentID int) error {
 	return u.paymentRepository.Delete(paymentID)
+}
+
+func (u *paymentUsecase) HistoryTransaction(paymentID int) ([]*domain.Payment, error) {
+	return u.paymentRepository.HistoryPayment(paymentID)
 }
 
 // func (u *paymentUsecase) MakePayment(payment *domain.Payment) error {

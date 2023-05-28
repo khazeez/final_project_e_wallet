@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 	"fmt"
+	"time"
 
 	// "errors"
 
@@ -201,9 +202,9 @@ func (r *transferRepository) Create(transfer *domain.Transfer) error {
 	if err != nil {
 		return fmt.Errorf("failed to update wallet balance: %v", err)
 	}
-
+	time := time.Now()
 	insertQuery := "INSERT INTO transfer (transfer_id, sender_wallet_id, receiver_wallet_id, amount, timestamp) VALUES ($1, $2, $3, $4, $5)"
-	_, err = r.db.Exec(insertQuery, transfer.ID, transfer.SenderId.ID, transfer.ReceiferId.ID, transfer.Amount, transfer.Timestamp)
+	_, err = r.db.Exec(insertQuery, transfer.ID, transfer.SenderId.ID, transfer.ReceiferId.ID, transfer.Amount, time)
 	if err != nil {
 		return fmt.Errorf("failed to transfer: %v", err)
 	}
