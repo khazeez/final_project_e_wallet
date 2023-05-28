@@ -1,9 +1,11 @@
 package repository
 
+
 import (
 	"database/sql"
 	"fmt"
 	"time"
+
 
 	"github.com/KhoirulAziz99/final_project_e_wallet/internal/domain"
 )
@@ -16,6 +18,7 @@ type WithdrawRepository interface {
 	Delete(withdrawalID int) error
 	HistoryWithdrawal(wallet_id int) ([]*domain.Withdrawal, error)
 }
+
 type withdrawRepository struct {
 	db *sql.DB
 }
@@ -25,6 +28,7 @@ func NewWithdrawRepository(db *sql.DB) WithdrawRepository {
 		db: db,
 	}
 }
+
 func (r *withdrawRepository) Create(withdrawal *domain.Withdrawal) error {
 	// Cek apakah wallet dengan ID yang diberikan ada dalam database
 	query := "SELECT balance FROM Wallet WHERE wallet_id = $1"
@@ -37,12 +41,15 @@ func (r *withdrawRepository) Create(withdrawal *domain.Withdrawal) error {
 		}
 		return fmt.Errorf("failed to get wallet balance: %v", err)
 	}
+
+
 	// Cek apakah saldo cukup untuk melakukan penarikan
 	if balance < float64(withdrawal.Amount) {
 		return fmt.Errorf("insufficient balance")
 	}
 
 	// Kurangi saldo wallet sesuai dengan jumlah penarikan
+
 	// newBalance := balance - float64(withdrawal.Amount)
 	// Update saldo pada tabel wallet
 	balance = 0
@@ -51,6 +58,8 @@ func (r *withdrawRepository) Create(withdrawal *domain.Withdrawal) error {
 	if err != nil {
 		return fmt.Errorf("failed to update wallet balance: %v", err)
 	}
+
+
 	// Simpan data withdrawal ke dalam tabel Withdrawal
 	time := time.Now()
 	insertQuery := "INSERT INTO Withdrawal (withdrawal_id, wallet_id, amount, timestamp) VALUES ($1, $2, $3, $4)"
@@ -60,6 +69,7 @@ func (r *withdrawRepository) Create(withdrawal *domain.Withdrawal) error {
 	}
 	return nil
 }
+
 
 func (r *withdrawRepository) FindOne(withdrawalID int) (*domain.Withdrawal, error) {
 	query := `
@@ -122,6 +132,7 @@ func (r *withdrawRepository) FindAll() ([]*domain.Withdrawal, error) {
 	}
 	return withdrawals, nil
 }
+
 
 func (r *withdrawRepository) Update(withdrawal *domain.Withdrawal) error {
 	updateQuery := "UPDATE Withdrawal SET wallet_id = $1 WHERE withdrawal_id = $2"
