@@ -40,12 +40,11 @@ func SetUpRouter(db *sql.DB) *gin.Engine {
 	userRouters := apiV1.Group("/users")
 	{
 		userRouters.POST("/login", pkg.LoginGPTHandler(db))
-		userRouters.POST("/", userHandler.InsertUser)
+		userRouters.POST("/", userHandler.CreateUser)
 		userRouters.PUT("/:id", userHandler.UpdateUser)
 		userRouters.DELETE("/:id", userHandler.DeleteUser)
-		userRouters.GET("/:id", userHandler.FindOneUser)
-		userRouters.GET("/", userHandler.FindAllUsers)
-		userRouters.PUT("/:id/profile-picture", userHandler.UpdateProfilePicture)
+		userRouters.GET("/:id", userHandler.GetUser)
+		userRouters.GET("/", userHandler.GetAllUsers)
 	}
 
 	paymentRouters := apiV1.Group("/payments")

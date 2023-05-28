@@ -2,9 +2,10 @@ package app
 
 import (
 	"errors"
-	"fmt"
+
 	"github.com/KhoirulAziz99/final_project_e_wallet/internal/domain"
 	"github.com/KhoirulAziz99/final_project_e_wallet/internal/repository"
+
 )
 
 type UserUsecase interface {
@@ -13,7 +14,6 @@ type UserUsecase interface {
 	FindOne(id int) (*domain.User, error)
 	FindAll() ([]domain.User, error)
 	Delete(id int) error
-	UpdateProfilePicture(userID int) error
 }
 type userUsecase struct {
 	userRepository repository.UserRepository
@@ -62,23 +62,6 @@ func (u *userUsecase) Delete(id int) error {
 func (u *userUsecase) FindOne(id int) (*domain.User, error) {
 	return u.userRepository.FindOne(id)
 }
-func (u *userUsecase) UpdateProfilePicture(userID int) error {
-	// Generate new file name for the profile picture
-	newFileName := fmt.Sprintf("cmd/%d.jpg", userID)
 
-	// Create a new user instance with the updated profile picture file name
-	updatedUser := &domain.User{
-		ID:             userID,
-		ProfilePicture: newFileName,
-	}
 
-	// Update profile picture in the repository
-	err := u.userRepository.Updatefile(updatedUser)
-	if err != nil {
-		// Handle error accordingly
-		return err
-	}
-
-	return nil
-}
 

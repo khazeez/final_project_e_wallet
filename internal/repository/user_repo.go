@@ -4,18 +4,17 @@ import (
 	"database/sql"
 	"log"
 
-	"golang.org/x/crypto/bcrypt"
 
 	"github.com/KhoirulAziz99/final_project_e_wallet/internal/domain"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type UserRepository interface {
 	Create(newUser *domain.User) error
-	Update(updetedUser *domain.User) error
+	Update(updatedUser *domain.User) error
 	Delete(id int) error
 	FindOne(id int) (*domain.User, error)
 	FindAll() ([]domain.User, error)
-	Updatefile(updetedUser *domain.User) error 
 }
 
 type userRepository struct {
@@ -25,44 +24,22 @@ type userRepository struct {
 func NewUserRepository(db *sql.DB) *userRepository {
 	return &userRepository{db: db}
 }
-func (u userRepository) Create(newUser *domain.User) error {
-	query := `INSERT INTO users (user_id, name, email, password, profile_picture) VALUES ($1, $2, $3, $4, $5)`
-	hashedPassword, errr := bcrypt.GenerateFromPassword([]byte(newUser.Password), bcrypt.DefaultCost)
 
-	if errr != nil {
-		panic(errr)
-	}
-
-	_, err := u.db.Exec(query, newUser.ID, newUser.Name, newUser.Email, hashedPassword, newUser.ProfilePicture)
+func (u *userRepository) Create(newUser *domain.User) error {
+	query := `INSERT INTO users (name, email, password, profile_picture) VALUES ($1, $2, $3, $4)`
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newUser.Password), bcrypt.DefaultCost)
 	if err != nil {
-		panic(err)
-	} else {
-		log.Println("Succsessfully added user")
+		return err
 	}
-	return err
-}
 
-func (u userRepository) Update(updetedUser *domain.User) error {
-	query := `UPDATE users SET name=$2, email=$3, password=$4, profile_picture=$5 WHERE user_id=$1`
-	_, err := u.db.Exec(query, updetedUser.ID, updetedUser.Name, updetedUser.Email, updetedUser.Password, updetedUser.ProfilePicture)
+	// Simpan pengguna ke dalam database
+	_, err = u.db.Exec(query, newUser.Name, newUser.Email, hashedPassword, newUser.ProfilePicture)
 	if err != nil {
-		panic(err)
-	} else {
-		log.Println("Succsessfully updated")
+		return err
 	}
 
-	return err
-}
-func (u userRepository) Updatefile(updetedUser *domain.User) error {
-	query := `UPDATE users SET profile_picture = 'cmd/' || $1 || '.jpg' WHERE id = $2`
-_, err := u.db.Exec(query, updetedUser.ID, updetedUser.ID)
-	if err != nil {
-		panic(err)
-	} else {
-		log.Println("Succsessfully updated")
-	}
-
-	return err
+	log.Println("Successfully added user")
+	return nil
 }
 
 func (u *userRepository) Delete(id int) error {
@@ -72,28 +49,28 @@ func (u *userRepository) Delete(id int) error {
 		log.Println("Failed to delete user:", err)
 		return err
 	}
+
 	log.Println("Successfully deleted user")
 	return nil
 }
 
-
-func (u userRepository) FindOne(id int) (*domain.User, error) {
-	query := `SELECT name, email, password, profile_picture, is_deleted FROM users WHERE user_id=$1;`
+func (u *userRepository) FindOne(id int) (*domain.User, error) {
+	query := `SELECT user_id, name, email, password, profile_picture, is_deleted FROM users WHERE user_id=$1`
 	row := u.db.QueryRow(query, id)
 	var user domain.User
-	err := row.Scan(&user.Name, &user.Email, &user.Password, &user.ProfilePicture, &user.IsDeleted)
+	err := row.Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.ProfilePicture, &user.IsDeleted)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	user.ID = id
+
 	return &user, nil
 }
 
-func (u userRepository) FindAll() ([]domain.User, error) {
-	query := `SELECT user_id, name, email, password, profile_picture, is_deleted FROM users;`
+func (u *userRepository) FindAll() ([]domain.User, error) {
+	query := `SELECT user_id, name, email, password, profile_picture, is_deleted FROM users`
 	rows, err := u.db.Query(query)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	defer rows.Close()
 
@@ -102,12 +79,25 @@ func (u userRepository) FindAll() ([]domain.User, error) {
 		var user domain.User
 		err := rows.Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.ProfilePicture, &user.IsDeleted)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 		users = append(users, user)
 	}
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
-	return users, err
+
+	return users, nil
+}
+func (u *userRepository) Update(updatedUser *domain.User) error {
+	query := `UPDATE users SET name=$1, email=$2, profile_picture=$3 WHERE user_id=$4`
+
+	_, err := u.db.Exec(query, updatedUser.Name, updatedUser.Email, updatedUser.ProfilePicture, updatedUser.ID)
+	if err != nil {
+		log.Println("Failed to update user:", err)
+		return err
+	}
+
+	log.Println("Successfully updated user")
+	return nil
 }
