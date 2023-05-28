@@ -44,7 +44,7 @@ func SetUpRouter(db *sql.DB) *gin.Engine {
 	userRouters := apiV1.Group("/users")
 	{
 		userRouters.POST("/login", userHandler.Login)
-		userRouters.Use(pkg.AuthMiddleware())
+		// userRouters.Use(pkg.AuthMiddleware())
 		userRouters.GET("/profile", handler.ProfileHandler)
 		userRouters.POST("/", userHandler.InsertUser)
 		userRouters.PUT("/:id", userHandler.UpdateUser)
