@@ -13,6 +13,7 @@ type WithdrawRepository interface {
 	FindAll() ([]*domain.Withdrawal, error)
 	Update(withdrawal *domain.Withdrawal) error
 	Delete(withdrawalID int) error
+	History(wallet_id int) ([]*domain.Withdrawal, error)
 }
 type withdrawRepository struct {
 	db *sql.DB
@@ -137,3 +138,49 @@ func (r *withdrawRepository) Delete(withdrawalID int) error {
 	}
 	return nil
 }
+
+
+func (r *withdrawRepository) History(wallet_id int) ([]*domain.Withdrawal, error) {
+	query := `SELECT t.withdrawal_id, t.amount, w.wallet_id, u.user_id, u.name, u.email, u.password, u.profile_picture, u.is_deleted, w.balance FROM withdrawal t
+	 	JOIN Wallet w ON t.wallet_id = w.wallet_id
+	 	JOIN users u ON w.user_id = u.user_id
+	 	WHERE t.wallet_id = $1`
+
+	rows, err := r.db.Query(query, wallet_id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get withdrawals: %v", err)
+	}
+	defer rows.Close()
+
+	withdrawals := []*domain.Withdrawal{}
+	wallet := &domain.Wallet{}
+	user := &domain.User{}
+
+	for rows.Next() {
+		withdrawal := &domain.Withdrawal{}
+		err := rows.Scan(
+	&withdrawal.ID,
+	&withdrawal.Amount,
+	&wallet.ID,
+	&user.ID,
+ 	&user.Name,
+	&user.Email,
+	&user.Password,
+	&user.ProfilePicture,
+	&user.IsDeleted,
+	&wallet.Balance,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan withdrawal row: %v", err)
+		}
+
+	wallet.UserId = *user
+	withdrawal.WalletId = *wallet
+
+	withdrawals = append(withdrawals, withdrawal)
+	}
+	return withdrawals, nil
+}
+
+
+	

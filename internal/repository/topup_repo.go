@@ -10,10 +10,9 @@ import (
 type TopupRepository interface {
 	Create(wallet *domain.TopUp) error
 	FindOne(walletID int) (*domain.TopUp, error)
-	Update(*domain.TopUp) error 
+	Update(*domain.TopUp) error
 	Delete(walletID int) error
 	GetLastTopupAmount(walletID int) (float64, error)
-
 }
 
 type topupRepository struct {
@@ -35,7 +34,7 @@ func (r *topupRepository) Create(topup *domain.TopUp) error {
 	}
 
 	// Simpan data top-up ke dalam tabel TopUp
-	
+
 	insertQuery := "INSERT INTO TopUp (topup_id, wallet_id, amount) VALUES ($1, $2, $3)"
 	_, err = r.db.Exec(insertQuery, topup.ID, topup.WalletId.ID, topup.Amount)
 	if err != nil {
@@ -44,8 +43,6 @@ func (r *topupRepository) Create(topup *domain.TopUp) error {
 
 	return nil
 }
-
-
 
 func (r *topupRepository) GetLastTopupAmount(walletID int) (float64, error) {
 	query := "SELECT amount FROM TopUp WHERE wallet_id = $1 ORDER BY topup_id DESC LIMIT 1"
@@ -102,11 +99,9 @@ func (r *topupRepository) FindOne(topupID int) (*domain.TopUp, error) {
 	return topup, nil
 }
 
-
-
 func (r *topupRepository) Update(topup *domain.TopUp) error {
 	// Mendapatkan nilai jumlah top-up sebelumnya
-	queryGetAmount := "SELECT amount FROM TopUp WHERE topup_id = $1"
+	queryGetAmount := "SELECT amount FROM topup WHERE topup_id = $1"
 	row := r.db.QueryRow(queryGetAmount, topup.ID)
 	var previousAmount float64
 	err := row.Scan(&previousAmount)
@@ -115,10 +110,11 @@ func (r *topupRepository) Update(topup *domain.TopUp) error {
 	}
 
 	// Menghitung jumlah baru dengan menambahkan nilai sebelumnya
-	newAmount := previousAmount + topup.Amount
+	newAmount := 0.00
+	newAmount = previousAmount + topup.Amount
 
 	// Memperbarui jumlah top-up dengan nilai baru
-	queryUpdateAmount := "UPDATE TopUp SET amount = $1 WHERE topup_id = $2"
+	queryUpdateAmount := "UPDATE topup SET amount = $1 WHERE topup_id = $2"
 	_, err = r.db.Exec(queryUpdateAmount, newAmount, topup.ID)
 	if err != nil {
 		return fmt.Errorf("failed to update top-up amount: %v", err)
@@ -126,7 +122,6 @@ func (r *topupRepository) Update(topup *domain.TopUp) error {
 
 	return nil
 }
-
 
 func (r *topupRepository) Delete(topupID int) error {
 	query := "DELETE FROM TopUp WHERE topup_id = $1"

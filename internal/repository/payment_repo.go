@@ -100,7 +100,7 @@ func (p *paymentRepository) FindOne(paymentID int) (*domain.Payment, error) {
 		return nil, fmt.Errorf("failed to find payment: %v", err)
 	}
 	wallet.UserId = *user
-	// Set wallet to topup's WalletId
+	
 	payment.WalletId = *wallet
 	return payment, nil
 }

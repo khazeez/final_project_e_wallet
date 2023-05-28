@@ -68,9 +68,9 @@ func SetUpRouter(db *sql.DB) *gin.Engine {
 	{
 		transferRouters.POST("/", transferHandler.CreateTransfer)
 		transferRouters.GET("/:transferID", transferHandler.GetTransferByID)
-		transferRouters.PUT("/:transferID", transferHandler.UpdateTransfer)
+		// transferRouters.PUT("/:transferID", transferHandler.UpdateTransfer)
 		transferRouters.DELETE("/:transferID", transferHandler.DeleteTransfer)
-		transferRouters.POST("/make-transfer", transferHandler.MakeTransfer)
+		// transferRouters.POST("/make-transfer", transferHandler.MakeTransfer)
 	}
 
 	walletRouters := apiV1.Group("/wallets")
@@ -90,5 +90,9 @@ func SetUpRouter(db *sql.DB) *gin.Engine {
 		// withdrawalRouters.POST("/:make-withdrawal", withdrawalHandler.MakeWithdrawal)
 	}
 
+	transactionRouters := apiV1.Group("/history")
+	{
+		transactionRouters.GET("/:wallet_id", withdrawalHandler.HistoryTransaction)
+	}
 	return r
 }

@@ -101,3 +101,20 @@ func (h *WithdrawalHandler) MakeWithdrawal(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Withdrawal made successfully"})
 }
+
+
+func (h *WithdrawalHandler) HistoryTransaction(c *gin.Context) {
+	withdrawalID, err := strconv.Atoi(c.Param("wallet_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid wallet ID"})
+		return
+	}
+
+	withdrawal, err := h.withdrawalUsecase.HistoryTransaction(withdrawalID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, withdrawal)
+}
