@@ -7,6 +7,7 @@ import (
 type WithdrawUsecase interface {
 	CreateWithdrawal(withdrawal *domain.Withdrawal) error
 	GetWithdrawalByID(withdrawalID int) (*domain.Withdrawal, error)
+	HistoryTransaction(withdrawalID int) ([]*domain.Withdrawal, error)
 	UpdateWithdrawal(withdrawal *domain.Withdrawal) error
 	DeleteWithdrawal(withdrawalID int) error
 	MakeWithdrawal(withdrawal *domain.Withdrawal) error
@@ -62,4 +63,10 @@ func (u *withdrawUsecase) MakeWithdrawal(withdrawal *domain.Withdrawal) error {
 		return fmt.Errorf("failed to create withdrawal: %v", err)
 	}
 	return nil
+}
+
+
+
+func (u *withdrawUsecase) HistoryTransaction(withdrawalID int) ([]*domain.Withdrawal, error) {
+	return u.withdrawRepository.HistoryWithdrawal(withdrawalID)
 }

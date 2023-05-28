@@ -1,12 +1,15 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
+	"bytes"
 
 	"github.com/gin-gonic/gin"
 	"github.com/KhoirulAziz99/final_project_e_wallet/internal/app"
 	"github.com/KhoirulAziz99/final_project_e_wallet/internal/domain"
+	"github.com/jung-kurt/gofpdf"
 )
 
 type WithdrawalHandler struct {
@@ -100,4 +103,54 @@ func (h *WithdrawalHandler) MakeWithdrawal(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Withdrawal made successfully"})
+}
+
+
+func (h *WithdrawalHandler) HistoryWithdrawal(c *gin.Context) {
+	walletID, err := strconv.Atoi(c.Param("walletID"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid wallet ID"})
+		return
+	}
+
+	withdrawals, err := h.withdrawalUsecase.HistoryTransaction(walletID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Generate PDF from transaction data
+	pdfOutput := GeneratePDF(withdrawals)
+
+	// Send PDF file as response
+	c.Data(http.StatusOK, "application/pdf", pdfOutput)
+}
+
+
+func GeneratePDF(withdrawals []*domain.Withdrawal) []byte {
+	pdf := gofpdf.New("P", "mm", "A4", "")
+
+	pdf.AddPage()
+	pdf.SetFont("Arial", "B", 16)
+	pdf.Cell(40, 10, "Transaction History")
+
+	// Add transaction data to PDF
+	for _, withdrawal := range withdrawals {
+		pdf.Ln(12)
+		pdf.Cell(20, 10, fmt.Sprintf("Username: %s \n | Email : %s", withdrawal.WalletId.UserId.Name, withdrawal.WalletId.UserId.Email))
+		break
+
+	}
+
+	for _, withdrawal := range withdrawals {
+		pdf.Ln(12)
+		pdf.Cell(20, 10, fmt.Sprintf("Withdrawal ID: %d \n \n | Amount: %f \n | Time: %v ", withdrawal.ID, withdrawal.Amount, withdrawal.Timestamp))
+
+	}
+	var buf bytes.Buffer
+	err := pdf.Output(&buf)
+	if err != nil {
+		return nil
+	}
+	return buf.Bytes()
 }
