@@ -12,6 +12,7 @@ type TopupUsecase interface {
 	GetTopupByID(topupID int) (*domain.TopUp, error)
 	UpdateTopup(topup *domain.TopUp) error
 	DeleteTopup(topupID int) error
+	HistoryTransaction(topupID int) ([]*domain.TopUp, error)
 	GetLastTopupAmount(walletID int) (float64, error)
 }
 
@@ -43,4 +44,9 @@ func (u *topupUsecase) DeleteTopup(topupID int) error {
 
 func (u *topupUsecase) GetLastTopupAmount(walletID int) (float64, error) {
 	return u.topupRepository.GetLastTopupAmount(walletID)
+}
+
+
+func (u *topupUsecase) HistoryTransaction(topupID int) ([]*domain.TopUp, error) {
+	return u.topupRepository.HistoryTopup(topupID)
 }

@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"log"
 
-	"golang.org/x/crypto/bcrypt"
 
 	"github.com/KhoirulAziz99/final_project_e_wallet/internal/domain"
 )
@@ -14,6 +13,7 @@ type UserRepository interface {
 	Update(updetedUser *domain.User) error
 	Delete(id int) error
 	FindOne(id int) (*domain.User, error)
+	FindByUsername(username string) (*domain.User, error)
 	FindAll() ([]domain.User, error)
 }
 
@@ -26,12 +26,8 @@ func NewUserRepository(db *sql.DB) *userRepository {
 }
 func (u userRepository) Create(newUser *domain.User) error {
 	query := `INSERT INTO users (user_id, name, email, password, profile_picture) VALUES ($1, $2, $3, $4, $5)`
-	hashedPassword, errr := bcrypt.GenerateFromPassword([]byte(newUser.Password), bcrypt.DefaultCost)
-	if errr != nil {
-		panic(errr)
-	}
 
-	_, err := u.db.Exec(query, newUser.ID, newUser.Name, newUser.Email, hashedPassword, newUser.ProfilePicture)
+	_, err := u.db.Exec(query, newUser.ID, newUser.Name, newUser.Email, newUser.Password, newUser.ProfilePicture)
 	if err != nil {
 		panic(err)
 	} else {
@@ -62,7 +58,6 @@ func (u *userRepository) Delete(id int) error {
 	log.Println("Successfully deleted user")
 	return nil
 }
-
 
 func (u userRepository) FindOne(id int) (*domain.User, error) {
 	query := `SELECT name, email, password, profile_picture, is_deleted FROM users WHERE user_id=$1;`
@@ -97,4 +92,15 @@ func (u userRepository) FindAll() ([]domain.User, error) {
 		return nil, err
 	}
 	return users, err
+}
+
+func (u userRepository) FindByUsername(username string) (*domain.User, error) {
+	query := `SELECT name, email, password, profile_picture, is_deleted FROM users WHERE name=$1;`
+	row := u.db.QueryRow(query, username)
+	var user domain.User
+	err := row.Scan(&user.Name, &user.Email, &user.Password, &user.ProfilePicture, &user.IsDeleted)
+	if err != nil {
+		panic(err)
+	}
+	return &user, nil
 }

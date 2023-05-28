@@ -2,6 +2,7 @@ package app
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/KhoirulAziz99/final_project_e_wallet/internal/domain"
 	"github.com/KhoirulAziz99/final_project_e_wallet/internal/repository"
@@ -11,6 +12,7 @@ type UserUsecase interface {
 	InsertUser(user *domain.User) error
 	UpdateUser(user *domain.User) error
 	FindOne(id int) (*domain.User, error)
+	FindByUsername(username string) (*domain.User, error)
 	FindAll() ([]domain.User, error)
 	Delete(id int) error
 }
@@ -60,4 +62,9 @@ func (u *userUsecase) FindAll() ([]domain.User, error) {
 
 func (u *userUsecase) Delete(id int) error {
 	return u.userRepository.Delete(id)
+}
+
+func (u *userUsecase) FindByUsername(username string) (*domain.User, error) {
+	fmt.Println(username)
+	return u.userRepository.FindByUsername(username)
 }

@@ -86,17 +86,17 @@ func (h *TransferHandler) DeleteTransfer(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Transfer deleted successfully"})
 }
 
-func (h *TransferHandler) MakeTransfer(c *gin.Context) {
-	var transfer domain.Transfer
-	if err := c.ShouldBindJSON(&transfer); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+// func (h *TransferHandler) MakeTransfer(c *gin.Context) {
+// 	var transfer domain.Transfer
+// 	if err := c.ShouldBindJSON(&transfer); err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+// 		return
+// 	}
 
-	if err := h.transferUsecase.MakeTransfer(&transfer); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
+// 	if err := h.transferUsecase.MakeTransfer(&transfer); err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+// 		return
+// 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Transfer made successfully"})
-}
+// 	c.JSON(http.StatusOK, gin.H{"message": "Transfer made successfully"})
+// }
