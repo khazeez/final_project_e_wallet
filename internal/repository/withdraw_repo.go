@@ -139,7 +139,6 @@ func (r *withdrawRepository) Delete(withdrawalID int) error {
 	return nil
 }
 
-
 func (r *withdrawRepository) History(wallet_id int) ([]*domain.Withdrawal, error) {
 	query := `SELECT t.withdrawal_id, t.amount, w.wallet_id, u.user_id, u.name, u.email, u.password, u.profile_picture, u.is_deleted, w.balance FROM withdrawal t
 	 	JOIN Wallet w ON t.wallet_id = w.wallet_id

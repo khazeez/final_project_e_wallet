@@ -3,10 +3,13 @@ package handler
 import (
 	"net/http"
 	"strconv"
-
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/KhoirulAziz99/final_project_e_wallet/internal/app"
 	"github.com/KhoirulAziz99/final_project_e_wallet/internal/domain"
+	"github.com/jung-kurt/gofpdf"
+	"bytes"
+
 )
 
 type WithdrawalHandler struct {
@@ -101,20 +104,44 @@ func (h *WithdrawalHandler) MakeWithdrawal(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Withdrawal made successfully"})
 }
-
-
 func (h *WithdrawalHandler) HistoryTransaction(c *gin.Context) {
-	withdrawalID, err := strconv.Atoi(c.Param("wallet_id"))
+	walletID, err := strconv.Atoi(c.Param("wallet_id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid wallet ID"})
 		return
 	}
 
-	withdrawal, err := h.withdrawalUsecase.HistoryTransaction(withdrawalID)
+	withdrawals, err := h.withdrawalUsecase.HistoryTransaction(walletID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, withdrawal)
+	// Generate PDF from transaction data
+	pdfOutput := GeneratePDF(withdrawals)
+
+	// Send PDF file as response
+	c.Data(http.StatusOK, "application/pdf", pdfOutput)
+}
+
+func GeneratePDF(withdrawals []*domain.Withdrawal) []byte {
+	pdf := gofpdf.New("P", "mm", "A4", "")
+
+	pdf.AddPage()
+	pdf.SetFont("Arial", "B", 16)
+	pdf.Cell(40, 10, "Transaction History")
+
+	// Add transaction data to PDF
+	for _, withdrawal := range withdrawals {
+		pdf.Ln(12)
+		pdf.Cell(40, 10, fmt.Sprintf("Withdrawal ID: %d", withdrawal.ID))
+		pdf.Cell(40, 10, fmt.Sprintf("Amount: %f", withdrawal.Amount))
+	
+	}
+	var buf bytes.Buffer
+	err := pdf.Output(&buf)
+	if err != nil {
+		return nil
+	}
+	return buf.Bytes()
 }
