@@ -15,6 +15,8 @@ type TransferRepository interface {
 	FindAll() ([]*domain.Transfer, error)
 	Update(transfer *domain.Transfer) error
 	Delete(transferID int) error
+	History(wallet_id int) ([]*domain.Transfer, error)
+
 }
 type transferRepository struct {
 	db               *sql.DB
@@ -209,3 +211,47 @@ func (r *transferRepository) Create(transfer *domain.Transfer) error {
 	}
 	return nil
 }
+func (r *transferRepository) History(walletID int) ([]*domain.Transfer, error) {
+	query := `SELECT t.transfer_id, t.sender_wallet_id, t.receiver_wallet_id, t.amount, t.timestamp, w.wallet_id, u.user_id, u.name, u.email, u.password, u.profile_picture, u.is_deleted, w.balance
+	FROM transfer t
+	JOIN wallet w ON t.sender_wallet_id = w.wallet_id
+	JOIN users u ON w.user_id = u.user_id
+	WHERE t.sender_wallet_id = $1 OR t.receiver_wallet_id = $1`
+
+	rows, err := r.db.Query(query, walletID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get transfers: %v", err)
+	}
+	defer rows.Close()
+
+	transfers := []*domain.Transfer{}
+
+	for rows.Next() {
+		transfer := &domain.Transfer{}
+		senderWallet := &domain.Wallet{}
+		senderUser := &domain.User{}
+
+		err := rows.Scan(
+			&transfer.ID,
+			&transfer.SenderId,
+			&transfer.ReceiferId,
+			&transfer.Amount,
+			&transfer.Timestamp,
+			&senderWallet.ID,
+			&senderUser.ID,
+			&senderUser.Name,
+			&senderUser.Email,
+			&senderUser.Password,
+			&senderUser.ProfilePicture,
+			&senderUser.IsDeleted,
+			&senderWallet.Balance,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan transfer row: %v", err)
+		}
+	}
+	
+	return transfers, nil
+}
+
+

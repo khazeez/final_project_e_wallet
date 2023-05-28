@@ -3,9 +3,12 @@ package handler
 import (
 	"net/http"
 	"strconv"
-	"github.com/KhoirulAziz99/final_project_e_wallet/internal/app"
+	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/KhoirulAziz99/final_project_e_wallet/internal/app"
 	"github.com/KhoirulAziz99/final_project_e_wallet/internal/domain"
+	"github.com/jung-kurt/gofpdf"
+	"bytes"
 )
 
 type TransferHandler struct {
@@ -85,6 +88,50 @@ func (h *TransferHandler) DeleteTransfer(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Transfer deleted successfully"})
 }
+
+func (h *TransferHandler) HistoryTransaction(c *gin.Context) {
+	senderID, err := strconv.Atoi(c.Param("sender_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid wallet ID"})
+		return
+	}
+
+	transfers, err := h.transferUsecase.HistoryTransaction(senderID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Generate PDF from transaction data
+	pdfOutput := GeneratePDF(transfers)
+
+	// Send PDF file as response
+	c.Data(http.StatusOK, "application/pdf", pdfOutput)
+}
+
+
+func GeneratePDF(transfers []*domain.Transfer) []byte {
+	pdf := gofpdf.New("P", "mm", "A4", "")
+
+	pdf.AddPage()
+	pdf.SetFont("Arial", "B", 16)
+	pdf.Cell(40, 10, "Transaction History")
+
+	// Add transaction data to PDF
+	for _, transfer := range transfers {
+		pdf.Ln(12)
+		pdf.Cell(40, 10, fmt.Sprintf("sender ID: %d", transfer.SenderId.ID))
+		pdf.Cell(40, 10, fmt.Sprintf("receiver ID: %d", transfer.ReceiferId.ID))
+		pdf.Cell(40, 10, fmt.Sprintf("Amount: %f", transfer.Amount))
+	}
+	var buf bytes.Buffer
+	err := pdf.Output(&buf)
+	if err != nil {
+		return nil
+	}
+	return buf.Bytes()
+}
+
 
 // func (h *TransferHandler) MakeTransfer(c *gin.Context) {
 // 	var transfer domain.Transfer

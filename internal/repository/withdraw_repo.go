@@ -18,7 +18,6 @@ type WithdrawRepository interface {
 type withdrawRepository struct {
 	db *sql.DB
 }
-
 func NewWithdrawRepository(db *sql.DB) WithdrawRepository {
 	return &withdrawRepository{
 		db: db,
@@ -67,7 +66,6 @@ func (r *withdrawRepository) FindOne(withdrawalID int) (*domain.Withdrawal, erro
 	JOIN users u ON w.user_id = u.user_id
 	WHERE t.withdrawal_id = $1
 	`
-
 	row := r.db.QueryRow(query, withdrawalID)
 	withdrawal := &domain.Withdrawal{}
 	wallet := &domain.Wallet{}
@@ -139,12 +137,12 @@ func (r *withdrawRepository) Delete(withdrawalID int) error {
 	return nil
 }
 
+
 func (r *withdrawRepository) History(wallet_id int) ([]*domain.Withdrawal, error) {
 	query := `SELECT t.withdrawal_id, t.amount, w.wallet_id, u.user_id, u.name, u.email, u.password, u.profile_picture, u.is_deleted, w.balance FROM withdrawal t
 	 	JOIN Wallet w ON t.wallet_id = w.wallet_id
 	 	JOIN users u ON w.user_id = u.user_id
 	 	WHERE t.wallet_id = $1`
-
 	rows, err := r.db.Query(query, wallet_id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get withdrawals: %v", err)
@@ -154,7 +152,7 @@ func (r *withdrawRepository) History(wallet_id int) ([]*domain.Withdrawal, error
 	withdrawals := []*domain.Withdrawal{}
 	wallet := &domain.Wallet{}
 	user := &domain.User{}
-
+	
 	for rows.Next() {
 		withdrawal := &domain.Withdrawal{}
 		err := rows.Scan(
@@ -175,7 +173,6 @@ func (r *withdrawRepository) History(wallet_id int) ([]*domain.Withdrawal, error
 
 	wallet.UserId = *user
 	withdrawal.WalletId = *wallet
-
 	withdrawals = append(withdrawals, withdrawal)
 	}
 	return withdrawals, nil

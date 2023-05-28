@@ -90,7 +90,9 @@ func SetUpRouter(db *sql.DB) *gin.Engine {
 
 	transactionRouters := apiV1.Group("/history")
 	{
-		transactionRouters.GET("/:wallet_id", withdrawalHandler.HistoryTransaction)
+		transactionRouters.GET("withdraw/:wallet_id", withdrawalHandler.HistoryTransaction)
+		transactionRouters.GET("transfer/:sender_id", transferHandler.HistoryTransaction)
+
 	}
 	return r
 }

@@ -118,13 +118,13 @@ func (h *WithdrawalHandler) HistoryTransaction(c *gin.Context) {
 	}
 
 	// Generate PDF from transaction data
-	pdfOutput := GeneratePDF(withdrawals)
+	pdfOutput := GeneratePDFwd(withdrawals)
 
 	// Send PDF file as response
 	c.Data(http.StatusOK, "application/pdf", pdfOutput)
 }
 
-func GeneratePDF(withdrawals []*domain.Withdrawal) []byte {
+func GeneratePDFwd(withdrawals []*domain.Withdrawal) []byte {
 	pdf := gofpdf.New("P", "mm", "A4", "")
 
 	pdf.AddPage()
@@ -136,7 +136,6 @@ func GeneratePDF(withdrawals []*domain.Withdrawal) []byte {
 		pdf.Ln(12)
 		pdf.Cell(40, 10, fmt.Sprintf("Withdrawal ID: %d", withdrawal.ID))
 		pdf.Cell(40, 10, fmt.Sprintf("Amount: %f", withdrawal.Amount))
-	
 	}
 	var buf bytes.Buffer
 	err := pdf.Output(&buf)
