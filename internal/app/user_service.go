@@ -5,7 +5,6 @@ import (
 
 	"github.com/KhoirulAziz99/final_project_e_wallet/internal/domain"
 	"github.com/KhoirulAziz99/final_project_e_wallet/internal/repository"
-
 )
 
 type UserUsecase interface {
@@ -51,6 +50,9 @@ func (u *userUsecase) UpdateUser(user *domain.User) error {
 	return u.userRepository.Update(user)
 }
 
+func (u *userUsecase) FindOne(id int) (*domain.User, error) {
+	return u.userRepository.FindOne(id)
+}
 
 func (u *userUsecase) FindAll() ([]domain.User, error) {
 	return u.userRepository.FindAll()
@@ -59,9 +61,3 @@ func (u *userUsecase) FindAll() ([]domain.User, error) {
 func (u *userUsecase) Delete(id int) error {
 	return u.userRepository.Delete(id)
 }
-func (u *userUsecase) FindOne(id int) (*domain.User, error) {
-	return u.userRepository.FindOne(id)
-}
-
-
-
