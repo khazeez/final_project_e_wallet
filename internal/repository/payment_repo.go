@@ -26,14 +26,6 @@ func NewPaymentRepository(db *sql.DB) PaymentRepository {
 	}
 }
 
-// func (r *paymentRepository) Create(payment *domain.Payment) error {
-// 	query := "INSERT INTO Payment (payment_id, wallet_id, amount, timestamp, payment_type, payment_detail) VALUES (?, ?, ?, ?, ?, ?)"
-// 	_, err := r.db.Exec(query, payment.ID, payment.WalletId, payment.Amount, payment.Timestamp, payment.PaymentType, payment.PaymentDetail)
-// 	if err != nil {
-// 		return fmt.Errorf("failed to create payment: %v", err)
-// 	}
-// 	return nil
-// }
 
 func (p *paymentRepository) Create(payment *domain.Payment) error {
 	query := "SELECT balance FROM wallet WHERE wallet_id = $1"

@@ -90,23 +90,6 @@ func (h *PaymentHandler) DeletePayment(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Payment deleted successfully"})
 }
 
-// func (h *PaymentHandler) HistoryPayment(c *gin.Context) {
-// 	paymentID, err := strconv.Atoi(c.Param("paymentID"))
-// 	if err != nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid wallet ID"})
-// 		return
-// 	}
-
-// 	payment, err := h.paymentUsecase.HistoryTransaction(paymentID)
-// 	if err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-// 		return
-// 	}
-
-// 	c.JSON(http.StatusOK, payment)
-// }
-
-
 
 func (h *PaymentHandler) HistoryPayment(c *gin.Context) {
 	walletID, err := strconv.Atoi(c.Param("paymentID"))
@@ -156,17 +139,4 @@ func GeneratePDFPayment(payments []*domain.Payment) []byte {
 	}
 	return buf.Bytes()
 }
-// func (h *PaymentHandler) MakePayment(c *gin.Context) {
-// 	var payment domain.Payment
-// 	if err := c.ShouldBindJSON(&payment); err != nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-// 		return
-// 	}
 
-// 	if err := h.paymentUsecase.MakePayment(&payment); err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-// 		return
-// 	}
-
-// 	c.JSON(http.StatusOK, gin.H{"message": "Payment made successfully"})
-// }
