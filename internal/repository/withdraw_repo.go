@@ -184,7 +184,6 @@ func (r *withdrawRepository) HistoryWithdrawal(wallet_id int) ([]*domain.Withdra
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan withdrawal row: %v", err)
 		}
-
 	wallet.UserId = *user
 	withdrawal.WalletId = *wallet
 	withdrawals = append(withdrawals, withdrawal)

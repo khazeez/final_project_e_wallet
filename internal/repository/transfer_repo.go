@@ -230,7 +230,9 @@ func (r *transferRepository) History(walletID int) ([]*domain.Transfer, error) {
 	for rows.Next() {
 		transfer := &domain.Transfer{}
 		senderWallet := &domain.Wallet{}
+	
 		senderUser := &domain.User{}
+
 
 		err := rows.Scan(
 			&transfer.ID,
@@ -250,9 +252,12 @@ func (r *transferRepository) History(walletID int) ([]*domain.Transfer, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan transfer row: %v", err)
 		}
+
+
+
+		transfers = append(transfers, transfer)
 	}
-	
+
 	return transfers, nil
 }
-
 
