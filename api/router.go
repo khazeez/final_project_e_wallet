@@ -29,6 +29,9 @@ func SetUpRouter(db *sql.DB) *gin.Engine {
 	withdrawalRepo := repository.NewWithdrawRepository(db)
 	withdrawalService := app.NewWithdrawUsecase(withdrawalRepo, walletRepo)
 	withdrawalHandler := handler.NewWithdrawalHandler(withdrawalService)
+	transactionRepo := repository.NewTransactionRepository(db)
+	transactionService := app.NewTransactionUsecase(transactionRepo)
+	transactionHandler := handler.NewTransactionHandler(transactionService)
 
 	r := gin.Default()
 
@@ -99,10 +102,5 @@ func SetUpRouter(db *sql.DB) *gin.Engine {
 		// withdrawalRouters.POST("/:make-withdrawal", withdrawalHandler.MakeWithdrawal)
 	}
 
-	// transactionRouters := apiV1.Group("/history")
-	// {
-	// 	transactionRouters.GET("/:walletID", withdrawalHandler.HistoryWithdrawal)
-	// 	transactionRouters.GET("/:paymentID", paymentHandler.HistoryPayment)
-	// }
 	return r
 }
