@@ -1,5 +1,4 @@
 package api
-
 import (
 	"database/sql"
 
@@ -9,7 +8,6 @@ import (
 	"github.com/KhoirulAziz99/final_project_e_wallet/pkg"
 	"github.com/gin-gonic/gin"
 )
-
 func SetUpRouter(db *sql.DB) *gin.Engine {
 	userRepo := repository.NewUserRepository(db)
 	userService := app.NewUserUsecase(userRepo)
@@ -104,3 +102,4 @@ func SetUpRouter(db *sql.DB) *gin.Engine {
 
 	return r
 }
+

@@ -11,6 +11,7 @@ type TransferUsecase interface {
 	GetTransferByID(transferID int) (*domain.Transfer, error)
 	UpdateTransfer(transfer *domain.Transfer) error
 	DeleteTransfer(transferID int) error
+	HistoryTransaction(transferID int) ([]*domain.Transfer, error)
 	// MakeTransfer(transfer *domain.Transfer) error
 }
 
@@ -40,6 +41,9 @@ func (u *transferUsecase) UpdateTransfer(transfer *domain.Transfer) error {
 
 func (u *transferUsecase) DeleteTransfer(transferID int) error {
 	return u.transferRepository.Delete(transferID)
+}
+func (u *transferUsecase) HistoryTransaction(transferID int) ([]*domain.Transfer, error) {
+	return u.transferRepository.History(transferID)
 }
 
 // func (u *transferUsecase) MakeTransfer(transfer *domain.Transfer) error {

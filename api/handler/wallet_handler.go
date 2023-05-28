@@ -7,6 +7,7 @@ import (
 	"github.com/KhoirulAziz99/final_project_e_wallet/internal/app"
 	"github.com/gin-gonic/gin"
 	"github.com/KhoirulAziz99/final_project_e_wallet/internal/domain"
+	
 )
 
 type WalletHandler struct {
@@ -78,11 +79,9 @@ func (h *WalletHandler) DeleteWallet(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid wallet ID"})
 		return
 	}
-
 	if err := h.walletUsecase.DeleteWallet(walletID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
 	c.JSON(http.StatusOK, gin.H{"message": "Wallet deleted successfully"})
 }
