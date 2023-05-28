@@ -29,9 +29,9 @@ func SetUpRouter(db *sql.DB) *gin.Engine {
 	withdrawalRepo := repository.NewWithdrawRepository(db)
 	withdrawalService := app.NewWithdrawUsecase(withdrawalRepo, walletRepo)
 	withdrawalHandler := handler.NewWithdrawalHandler(withdrawalService)
-	transactionRepo := repository.NewTransactionRepository(db)
-	transactionService := app.NewTransactionUsecase(transactionRepo)
-	transactionHandler := handler.NewTransactionHandler(transactionService)
+	// transactionRepo := repository.NewTransactionRepository(db)
+	// transactionService := app.NewTransactionUsecase(transactionRepo)
+	// transactionHandler := handler.NewTransactionHandler(transactionService)
 
 	r := gin.Default()
 

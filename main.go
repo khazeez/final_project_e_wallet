@@ -7,15 +7,6 @@ import (
 )
 
 func main() {
-	// db, err := config.InitDb()
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// config.DbClose(db)
-
-	// if err := server.Run(); err != nil {
-	// 	log.Fatalf("Error running the server : %s", err)
-	// }
 
 	if err := server.Run; err != nil {
 		log.Fatalf("Error running the server : %s", err())
