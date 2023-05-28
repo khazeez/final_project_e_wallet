@@ -24,7 +24,6 @@ func NewUserRepository(db *sql.DB) *userRepository {
 func (u userRepository) Create(newUser *domain.User) error {
 	query := `INSERT INTO users (user_id, name, email, password, profile_picture) VALUES ($1, $2, $3, $4, $5)`
 
-
 	_, err := u.db.Exec(query, newUser.ID, newUser.Name, newUser.Email, newUser.Password, newUser.ProfilePicture)
 	if err != nil {
 		panic(err)

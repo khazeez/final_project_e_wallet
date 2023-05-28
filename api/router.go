@@ -27,10 +27,17 @@ func SetUpRouter(db *sql.DB) *gin.Engine {
 	withdrawalRepo := repository.NewWithdrawRepository(db)
 	withdrawalService := app.NewWithdrawUsecase(withdrawalRepo, walletRepo)
 	withdrawalHandler := handler.NewWithdrawalHandler(withdrawalService)
+	transactionRepo := repository.NewTransactionRepository(db)
+	transactionService := app.NewTransactionUsecase(transactionRepo)
+	transactionHandler := handler.NewTransactionHandler(transactionService)
 
 	r := gin.Default()
 
 	apiV1 := r.Group("/api/v1")
+	apiV1.GET("/history-withdrawal/:walletID", withdrawalHandler.HistoryWithdrawal)
+	apiV1.GET("/history-payment/:paymentID", paymentHandler.HistoryPayment)
+	apiV1.GET("/history-topup/:topupID", topupHandler.HistoryTopup)
+
 
 	userRouters := apiV1.Group("/users")
 	{
@@ -45,7 +52,8 @@ func SetUpRouter(db *sql.DB) *gin.Engine {
 	}
 
 	paymentRouters := apiV1.Group("/payments")
-	{
+	{	
+		paymentRouters.Use(pkg.AuthMiddleware())
 		paymentRouters.POST("/", paymentHandler.CreatePayment)
 		paymentRouters.GET("/:paymentID", paymentHandler.GetPaymentByID)
 		paymentRouters.PUT("/:paymentID", paymentHandler.UpdatePayment)
@@ -54,7 +62,8 @@ func SetUpRouter(db *sql.DB) *gin.Engine {
 	}
 
 	topupRouters := apiV1.Group("/topups")
-	{
+	{	
+		topupRouters.Use(pkg.AuthMiddleware())
 		topupRouters.POST("/", topupHandler.CreateTopup)
 		topupRouters.GET("/:topupID", topupHandler.GetTopupByID)
 		topupRouters.PUT("/:topupID", topupHandler.UpdateTopup)
@@ -63,7 +72,8 @@ func SetUpRouter(db *sql.DB) *gin.Engine {
 	}
 
 	transferRouters := apiV1.Group("/transfers")
-	{
+	{	
+		topupRouters.Use(pkg.AuthMiddleware())
 		transferRouters.POST("/", transferHandler.CreateTransfer)
 		transferRouters.GET("/:transferID", transferHandler.GetTransferByID)
 		// transferRouters.PUT("/:transferID", transferHandler.UpdateTransfer)
@@ -72,7 +82,8 @@ func SetUpRouter(db *sql.DB) *gin.Engine {
 	}
 
 	walletRouters := apiV1.Group("/wallets")
-	{
+	{	
+		topupRouters.Use(pkg.AuthMiddleware())
 		walletRouters.POST("/", walletHandler.CreateWallet)
 		walletRouters.GET("/:walletID", walletHandler.GetWalletByID)
 		walletRouters.PUT("/:walletID", walletHandler.UpdateWalletBalance)
@@ -80,7 +91,8 @@ func SetUpRouter(db *sql.DB) *gin.Engine {
 	}
 
 	withdrawalRouters := apiV1.Group("/withdrawals")
-	{
+	{	
+		topupRouters.Use(pkg.AuthMiddleware())
 		withdrawalRouters.POST("/", withdrawalHandler.CreateWithdrawal)
 		withdrawalRouters.GET("/:id", withdrawalHandler.GetWithdrawalByID)
 		// withdrawalRouters.PUT("/:id", withdrawalHandler.UpdateWithdrawal)
@@ -88,12 +100,6 @@ func SetUpRouter(db *sql.DB) *gin.Engine {
 		// withdrawalRouters.POST("/:make-withdrawal", withdrawalHandler.MakeWithdrawal)
 	}
 
-	transactionRouters := apiV1.Group("/history")
-	{
-		transactionRouters.GET("withdraw/:wallet_id", withdrawalHandler.HistoryTransaction)
-		transactionRouters.GET("transfer/:sender_id", transferHandler.HistoryTransaction)
-
-	}
 	return r
 }
 

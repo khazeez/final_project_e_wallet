@@ -1,8 +1,11 @@
 package repository
 
+
 import (
 	"database/sql"
 	"fmt"
+	"time"
+
 
 	"github.com/KhoirulAziz99/final_project_e_wallet/internal/domain"
 )
@@ -13,8 +16,9 @@ type WithdrawRepository interface {
 	FindAll() ([]*domain.Withdrawal, error)
 	Update(withdrawal *domain.Withdrawal) error
 	Delete(withdrawalID int) error
-	History(wallet_id int) ([]*domain.Withdrawal, error)
+	HistoryWithdrawal(wallet_id int) ([]*domain.Withdrawal, error)
 }
+
 type withdrawRepository struct {
 	db *sql.DB
 }
@@ -23,6 +27,7 @@ func NewWithdrawRepository(db *sql.DB) WithdrawRepository {
 		db: db,
 	}
 }
+
 func (r *withdrawRepository) Create(withdrawal *domain.Withdrawal) error {
 	// Cek apakah wallet dengan ID yang diberikan ada dalam database
 	query := "SELECT balance FROM Wallet WHERE wallet_id = $1"
@@ -35,12 +40,15 @@ func (r *withdrawRepository) Create(withdrawal *domain.Withdrawal) error {
 		}
 		return fmt.Errorf("failed to get wallet balance: %v", err)
 	}
+
+
 	// Cek apakah saldo cukup untuk melakukan penarikan
 	if balance < float64(withdrawal.Amount) {
 		return fmt.Errorf("insufficient balance")
 	}
 
 	// Kurangi saldo wallet sesuai dengan jumlah penarikan
+
 	// newBalance := balance - float64(withdrawal.Amount)
 	// Update saldo pada tabel wallet
 	balance = 0
@@ -49,14 +57,18 @@ func (r *withdrawRepository) Create(withdrawal *domain.Withdrawal) error {
 	if err != nil {
 		return fmt.Errorf("failed to update wallet balance: %v", err)
 	}
+
+
 	// Simpan data withdrawal ke dalam tabel Withdrawal
+	time := time.Now()
 	insertQuery := "INSERT INTO Withdrawal (withdrawal_id, wallet_id, amount, timestamp) VALUES ($1, $2, $3, $4)"
-	_, err = r.db.Exec(insertQuery, withdrawal.ID, withdrawal.WalletId.ID, withdrawal.Amount, withdrawal.Timestamp)
+	_, err = r.db.Exec(insertQuery, withdrawal.ID, withdrawal.WalletId.ID, withdrawal.Amount, time)
 	if err != nil {
 		return fmt.Errorf("failed to create withdrawal: %v", err)
 	}
 	return nil
 }
+
 
 func (r *withdrawRepository) FindOne(withdrawalID int) (*domain.Withdrawal, error) {
 	query := `
@@ -119,6 +131,7 @@ func (r *withdrawRepository) FindAll() ([]*domain.Withdrawal, error) {
 	return withdrawals, nil
 }
 
+
 func (r *withdrawRepository) Update(withdrawal *domain.Withdrawal) error {
 	updateQuery := "UPDATE Withdrawal SET wallet_id = $1 WHERE withdrawal_id = $2"
 	_, err := r.db.Exec(updateQuery, withdrawal.WalletId.ID, withdrawal.ID)
@@ -138,8 +151,8 @@ func (r *withdrawRepository) Delete(withdrawalID int) error {
 }
 
 
-func (r *withdrawRepository) History(wallet_id int) ([]*domain.Withdrawal, error) {
-	query := `SELECT t.withdrawal_id, t.amount, w.wallet_id, u.user_id, u.name, u.email, u.password, u.profile_picture, u.is_deleted, w.balance FROM withdrawal t
+func (r *withdrawRepository) HistoryWithdrawal(wallet_id int) ([]*domain.Withdrawal, error) {
+	query := `SELECT t.withdrawal_id, t.amount, t.timestamp, w.wallet_id, u.user_id, u.name, u.email, u.password, u.profile_picture, u.is_deleted, w.balance FROM withdrawal t
 	 	JOIN Wallet w ON t.wallet_id = w.wallet_id
 	 	JOIN users u ON w.user_id = u.user_id
 	 	WHERE t.wallet_id = $1`
@@ -158,6 +171,7 @@ func (r *withdrawRepository) History(wallet_id int) ([]*domain.Withdrawal, error
 		err := rows.Scan(
 	&withdrawal.ID,
 	&withdrawal.Amount,
+	&withdrawal.Timestamp,
 	&wallet.ID,
 	&user.ID,
  	&user.Name,

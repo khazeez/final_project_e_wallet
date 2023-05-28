@@ -1,14 +1,15 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
-	"fmt"
+	"bytes"
+
 	"github.com/gin-gonic/gin"
 	"github.com/KhoirulAziz99/final_project_e_wallet/internal/app"
 	"github.com/KhoirulAziz99/final_project_e_wallet/internal/domain"
 	"github.com/jung-kurt/gofpdf"
-	"bytes"
 
 )
 
@@ -104,8 +105,11 @@ func (h *WithdrawalHandler) MakeWithdrawal(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Withdrawal made successfully"})
 }
-func (h *WithdrawalHandler) HistoryTransaction(c *gin.Context) {
-	walletID, err := strconv.Atoi(c.Param("wallet_id"))
+
+
+func (h *WithdrawalHandler) HistoryWithdrawal(c *gin.Context) {
+	walletID, err := strconv.Atoi(c.Param("walletID"))
+  
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid wallet ID"})
 		return
@@ -118,13 +122,17 @@ func (h *WithdrawalHandler) HistoryTransaction(c *gin.Context) {
 	}
 
 	// Generate PDF from transaction data
+
 	pdfOutput := GeneratePDFwd(withdrawals)
+
 
 	// Send PDF file as response
 	c.Data(http.StatusOK, "application/pdf", pdfOutput)
 }
 
+
 func GeneratePDFwd(withdrawals []*domain.Withdrawal) []byte {
+
 	pdf := gofpdf.New("P", "mm", "A4", "")
 
 	pdf.AddPage()
@@ -134,8 +142,15 @@ func GeneratePDFwd(withdrawals []*domain.Withdrawal) []byte {
 	// Add transaction data to PDF
 	for _, withdrawal := range withdrawals {
 		pdf.Ln(12)
-		pdf.Cell(40, 10, fmt.Sprintf("Withdrawal ID: %d", withdrawal.ID))
-		pdf.Cell(40, 10, fmt.Sprintf("Amount: %f", withdrawal.Amount))
+		pdf.Cell(20, 10, fmt.Sprintf("Username: %s \n | Email : %s", withdrawal.WalletId.UserId.Name, withdrawal.WalletId.UserId.Email))
+		break
+
+	}
+
+	for _, withdrawal := range withdrawals {
+		pdf.Ln(12)
+		pdf.Cell(20, 10, fmt.Sprintf("Withdrawal ID: %d \n \n | Amount: %f \n | Time: %v ", withdrawal.ID, withdrawal.Amount, withdrawal.Timestamp))
+
 	}
 	var buf bytes.Buffer
 	err := pdf.Output(&buf)
@@ -143,4 +158,6 @@ func GeneratePDFwd(withdrawals []*domain.Withdrawal) []byte {
 		return nil
 	}
 	return buf.Bytes()
+
 }
+

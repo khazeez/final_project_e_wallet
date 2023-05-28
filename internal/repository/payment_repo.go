@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/KhoirulAziz99/final_project_e_wallet/internal/domain"
 )
@@ -12,6 +13,7 @@ type PaymentRepository interface {
 	FindOne(paymentID int) (*domain.Payment, error)
 	Update(payment *domain.Payment) error
 	Delete(paymentID int) error
+	HistoryPayment(wallet_id int) ([]*domain.Payment, error)
 }
 
 type paymentRepository struct {
@@ -56,8 +58,9 @@ func (p *paymentRepository) Create(payment *domain.Payment) error {
 		return fmt.Errorf("failed to update wallet balance: %v", err)
 	}
 
+	time := time.Now()
 	insertQuery := "INSERT INTO payment (payment_id, wallet_id, amount, timestamp, payment_type, payment_details) VALUES ($1, $2, $3, $4, $5, $6);"
-	_, err = p.db.Exec(insertQuery, payment.ID, payment.WalletId.ID, payment.Amount, payment.Timestamp, payment.PaymentType, payment.PaymentDetail)
+	_, err = p.db.Exec(insertQuery, payment.ID, payment.WalletId.ID, payment.Amount, time, payment.PaymentType, payment.PaymentDetail)
 	if err != nil {
 		return fmt.Errorf("failed to create payment: %v", err)
 	}
@@ -66,7 +69,7 @@ func (p *paymentRepository) Create(payment *domain.Payment) error {
 
 func (p *paymentRepository) FindOne(paymentID int) (*domain.Payment, error) {
 	query := `
-	SELECT t.payment_id, t.amount, t.payment_type, t.payment_details, w.wallet_id, u.user_id, u.name, u.email, u.password, u.profile_picture, u.is_deleted, w.balance
+	SELECT t.payment_id, t.amount, t.payment_type, t.payment_details, t.timestamp, w.wallet_id, u.user_id, u.name, u.email, u.password, u.profile_picture, u.is_deleted, w.balance
 	FROM payment t
 	JOIN wallet w ON t.wallet_id = w.wallet_id
 	JOIN users u ON w.user_id = u.user_id
@@ -83,6 +86,7 @@ func (p *paymentRepository) FindOne(paymentID int) (*domain.Payment, error) {
 		&payment.Amount,
 		&payment.PaymentType,
 		&payment.PaymentDetail,
+		&payment.Timestamp,
 		&wallet.ID,
 		&user.ID,
 		&user.Name,
@@ -100,7 +104,7 @@ func (p *paymentRepository) FindOne(paymentID int) (*domain.Payment, error) {
 		return nil, fmt.Errorf("failed to find payment: %v", err)
 	}
 	wallet.UserId = *user
-	
+
 	payment.WalletId = *wallet
 	return payment, nil
 }
@@ -121,4 +125,48 @@ func (r *paymentRepository) Delete(paymentID int) error {
 		return fmt.Errorf("failed to delete payment: %v", err)
 	}
 	return nil
+}
+
+func (r *paymentRepository) HistoryPayment(wallet_id int) ([]*domain.Payment, error) {
+	query := `SELECT t.payment_id, t.amount, t.payment_type, t.payment_details, w.wallet_id, u.user_id, u.name, u.email, u.password, u.profile_picture, u.is_deleted, w.balance FROM payment t
+	 	JOIN Wallet w ON t.wallet_id = w.wallet_id
+	 	JOIN users u ON w.user_id = u.user_id
+	 	WHERE t.wallet_id = $1`
+
+	rows, err := r.db.Query(query, wallet_id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get withdrawals: %v", err)
+	}
+	defer rows.Close()
+
+	payments := []*domain.Payment{}
+	wallet := &domain.Wallet{}
+	user := &domain.User{}
+
+	for rows.Next() {
+		payment := &domain.Payment{}
+		err := rows.Scan(
+			&payment.ID,
+			&payment.Amount,
+			&payment.PaymentType,
+			&payment.PaymentDetail,
+			&wallet.ID,
+			&user.ID,
+			&user.Name,
+			&user.Email,
+			&user.Password,
+			&user.ProfilePicture,
+			&user.IsDeleted,
+			&wallet.Balance,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan withdrawal row: %v", err)
+		}
+
+		wallet.UserId = *user
+		payment.WalletId = *wallet
+
+		payments = append(payments, payment)
+	}
+	return payments, nil
 }
