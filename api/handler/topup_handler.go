@@ -144,7 +144,7 @@ func GeneratePDFTopup(topups []*domain.TopUp) []byte {
 
 	for _, topup := range topups {
 		pdf.Ln(12)
-		pdf.Cell(20, 10, fmt.Sprintf("Top-Up ID: %d \n \n | Amount: %f \n | Time: %v ", topup.ID, topup.Amount, topup.Timestamp))
+		pdf.Cell(20, 10, fmt.Sprintf("Top-Up ID: %d \n \n | Amount: %2.f \n | Time: %v ", topup.ID, topup.Amount, topup.Timestamp))
 
 	}
 	var buf bytes.Buffer

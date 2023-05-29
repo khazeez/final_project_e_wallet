@@ -55,16 +55,16 @@ func (r *walletRepository) FindOne(walletID int) (*domain.Wallet, error) {
 
 	wallet.UserId = *user
 // Mendapatkan total jumlah top-up yang telah dilakukan untuk wallet ini
-queryTopUp := "SELECT COALESCE(SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END), 0) FROM TopUp WHERE wallet_id = $1"
-row = r.db.QueryRow(queryTopUp, walletID)
-var totalTopUp float64
-err = row.Scan(&totalTopUp)
-if err != nil {
-    return nil, fmt.Errorf("failed to get total top-up amount: %v", err)
-}
-// Menambahkan total top-up ke balance wallet
-wallet.Balance=0
-wallet.Balance += totalTopUp
+// queryTopUp := "SELECT COALESCE(SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END), 0) FROM TopUp WHERE wallet_id = $1"
+// row = r.db.QueryRow(queryTopUp, walletID)
+// var totalTopUp float64
+// err = row.Scan(&totalTopUp)
+// if err != nil {
+//     return nil, fmt.Errorf("failed to get total top-up amount: %v", err)
+// }
+// // Menambahkan total top-up ke balance wallet
+// wallet.Balance=0
+// wallet.Balance += totalTopUp
 	return wallet, nil
 }
 

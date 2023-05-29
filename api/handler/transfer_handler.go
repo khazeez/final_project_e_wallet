@@ -103,14 +103,14 @@ func (h *TransferHandler) HistoryTransaction(c *gin.Context) {
 	}
 
 	// Generate PDF from transaction data
-	pdfOutput := GeneratePDF(transfers)
+	pdfOutput := GeneratePDFTransfer(transfers)
 
 	// Send PDF file as response
 	c.Data(http.StatusOK, "application/pdf", pdfOutput)
 }
 
 
-func GeneratePDF(transfers []*domain.Transfer) []byte {
+func GeneratePDFTransfer(transfers []*domain.Transfer) []byte {
 	pdf := gofpdf.New("P", "mm", "A4", "")
 
 	pdf.AddPage()
@@ -122,7 +122,7 @@ func GeneratePDF(transfers []*domain.Transfer) []byte {
 		pdf.Ln(12)
 		pdf.Cell(40, 10, fmt.Sprintf("sender ID: %d", transfer.SenderId.ID))
 		pdf.Cell(40, 10, fmt.Sprintf("receiver ID: %d", transfer.ReceiferId.ID))
-		pdf.Cell(40, 10, fmt.Sprintf("Amount: %f", transfer.Amount))
+		pdf.Cell(40, 10, fmt.Sprintf("Amount: %2.f", transfer.Amount))
 	}
 	var buf bytes.Buffer
 	err := pdf.Output(&buf)
@@ -131,19 +131,3 @@ func GeneratePDF(transfers []*domain.Transfer) []byte {
 	}
 	return buf.Bytes()
 }
-
-
-// func (h *TransferHandler) MakeTransfer(c *gin.Context) {
-// 	var transfer domain.Transfer
-// 	if err := c.ShouldBindJSON(&transfer); err != nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-// 		return
-// 	}
-
-// 	if err := h.transferUsecase.MakeTransfer(&transfer); err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-// 		return
-// 	}
-
-// 	c.JSON(http.StatusOK, gin.H{"message": "Transfer made successfully"})
-// }
