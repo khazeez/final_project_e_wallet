@@ -61,6 +61,7 @@ func (r *transferRepository) FindOne(transferID int) (*domain.Transfer, error) {
 	}
 
 	err2 := row2.Scan(
+
 		&transfer.ID,
 		&walletSender.ID,
 		&walletSender.Balance,

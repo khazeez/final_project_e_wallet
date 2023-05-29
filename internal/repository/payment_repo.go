@@ -26,7 +26,6 @@ func NewPaymentRepository(db *sql.DB) PaymentRepository {
 	}
 }
 
-
 func (p *paymentRepository) Create(payment *domain.Payment) error {
 	query := "SELECT balance FROM wallet WHERE wallet_id = $1"
 	row := p.db.QueryRow(query, payment.WalletId.ID)
@@ -127,7 +126,7 @@ func (r *paymentRepository) HistoryPayment(wallet_id int) ([]*domain.Payment, er
 
 	rows, err := r.db.Query(query, wallet_id)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get withdrawals: %v", err)
+		return nil, fmt.Errorf("failed to get payments: %v", err)
 	}
 	defer rows.Close()
 
@@ -152,7 +151,7 @@ func (r *paymentRepository) HistoryPayment(wallet_id int) ([]*domain.Payment, er
 			&wallet.Balance,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan withdrawal row: %v", err)
+			return nil, fmt.Errorf("failed to scan payment row: %v", err)
 		}
 
 		wallet.UserId = *user
