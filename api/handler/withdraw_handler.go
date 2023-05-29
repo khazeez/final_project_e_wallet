@@ -144,7 +144,7 @@ func GeneratePDF(withdrawals []*domain.Withdrawal) []byte {
 
 	for _, withdrawal := range withdrawals {
 		pdf.Ln(12)
-		pdf.Cell(20, 10, fmt.Sprintf("Withdrawal ID: %d \n \n | Amount: %f \n | Time: %v ", withdrawal.ID, withdrawal.Amount, withdrawal.Timestamp))
+		pdf.Cell(20, 10, fmt.Sprintf("Withdrawal ID: %d \n \n | Amount: %2.f \n | Time: %v ", withdrawal.ID, withdrawal.Amount, withdrawal.Timestamp))
 
 	}
 	var buf bytes.Buffer

@@ -16,7 +16,6 @@ type TransferRepository interface {
 	Update(transfer *domain.Transfer) error
 	Delete(transferID int) error
 	History(wallet_id int) ([]*domain.Transfer, error)
-
 }
 type transferRepository struct {
 	db               *sql.DB
@@ -29,7 +28,6 @@ func NewTransferRepository(db *sql.DB, walletRepository WalletRepository) Transf
 		walletRepository: walletRepository,
 	}
 }
-
 
 func (r *transferRepository) FindOne(transferID int) (*domain.Transfer, error) {
 	query := "SELECT t.transfer_id, t.receiver_wallet_id, t.amount, s.balance, u.user_id, u.name, u.email, u.password FROM transfer t JOIN wallet s ON s.wallet_id = t.receiver_wallet_id JOIN users u ON s.user_id = u.user_id WHERE t.transfer_id = $1;"
@@ -62,16 +60,16 @@ func (r *transferRepository) FindOne(transferID int) (*domain.Transfer, error) {
 	}
 
 	err2 := row2.Scan(
-			&transfer.ID,
-			&walletSender.ID,
-			&walletSender.Balance,
-			&sender.Sender_ID,
-			&sender.Sender_Name,
-			&sender.Sender_Email,
-			&sender.Sender_Password)
-			if err2 != nil {
-				panic(err2)
-			}
+		&transfer.ID,
+		&walletSender.ID,
+		&walletSender.Balance,
+		&sender.Sender_ID,
+		&sender.Sender_Name,
+		&sender.Sender_Email,
+		&sender.Sender_Password)
+	if err2 != nil {
+		panic(err2)
+	}
 
 	walletSender.UserId = *sender
 	transfer.SenderId = *walletSender
@@ -168,7 +166,7 @@ func (r *transferRepository) Create(transfer *domain.Transfer) error {
 	return nil
 }
 func (r *transferRepository) History(walletID int) ([]*domain.Transfer, error) {
-	query := `SELECT t.transfer_id, t.sender_wallet_id, t.receiver_wallet_id, t.amount, t.timestamp, w.wallet_id, u.user_id, u.name, u.email, u.password, u.profile_picture, u.is_deleted, w.balance
+	query := `SELECT t.transfer_id, t.sender_wallet_id, t.receiver_wallet_id, t.amount, t.timestamp, w.balance
 	FROM transfer t
 	JOIN wallet w ON t.sender_wallet_id = w.wallet_id
 	JOIN users u ON w.user_id = u.user_id
@@ -184,31 +182,31 @@ func (r *transferRepository) History(walletID int) ([]*domain.Transfer, error) {
 
 	for rows.Next() {
 		transfer := &domain.Transfer{}
-		senderWallet := &domain.Wallet{}
-	
-		senderUser := &domain.User{}
-
+		senderWallet := &domain.SenderWallet{}
+		receiverWallet := &domain.ReceiverWallet{}
+		senderUser := &domain.UserSender{}
+		receiverUser := &domain.UserReceiver{}
 
 		err := rows.Scan(
 			&transfer.ID,
-			&transfer.SenderId,
-			&transfer.ReceiferId,
+			&senderWallet.ID,
+			&receiverWallet.ID,
 			&transfer.Amount,
 			&transfer.Timestamp,
-			&senderWallet.ID,
-			&senderUser.ID,
-			&senderUser.Name,
-			&senderUser.Email,
-			&senderUser.Password,
-			&senderUser.ProfilePicture,
-			&senderUser.IsDeleted,
 			&senderWallet.Balance,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan transfer row: %v", err)
 		}
 
+		senderWallet.UserId = *senderUser
+		transfer.SenderId = *senderWallet
 
+		if receiverWallet.ID != 0 {
+			receiverUser.Receifer_ID = receiverWallet.UserId.Receifer_ID
+			receiverWallet.UserId = *receiverUser
+			transfer.ReceiferId = *receiverWallet
+		}
 
 		transfers = append(transfers, transfer)
 	}

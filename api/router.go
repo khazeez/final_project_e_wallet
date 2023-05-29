@@ -42,10 +42,10 @@ func SetUpRouter(db *sql.DB) *gin.Engine {
 
 	userRouters := apiV1.Group("/users")
 	{
+		userRouters.POST("/", userHandler.InsertUser)
 		userRouters.POST("/login", userHandler.Login)
 		 userRouters.Use(pkg.AuthMiddleware())
 		userRouters.GET("/profile", handler.ProfileHandler)
-		userRouters.POST("/", userHandler.InsertUser)
 		userRouters.PUT("/:id", userHandler.UpdateUser)
 		userRouters.DELETE("/:id", userHandler.DeleteUser)
 		userRouters.GET("/:id", userHandler.FindOneUser)
