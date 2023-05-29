@@ -42,10 +42,10 @@ func SetUpRouter(db *sql.DB) *gin.Engine {
 
 	userRouters := apiV1.Group("/users")
 	{
+		userRouters.POST("/", userHandler.InsertUser)
 		userRouters.POST("/login", userHandler.Login)
 		 userRouters.Use(pkg.AuthMiddleware())
 		userRouters.GET("/profile", handler.ProfileHandler)
-		userRouters.POST("/", userHandler.InsertUser)
 		userRouters.PUT("/:id", userHandler.UpdateUser)
 		userRouters.DELETE("/:id", userHandler.DeleteUser)
 		userRouters.GET("/:id", userHandler.FindOneUser)
@@ -74,7 +74,7 @@ func SetUpRouter(db *sql.DB) *gin.Engine {
 
 	transferRouters := apiV1.Group("/transfers")
 	{	
-		topupRouters.Use(pkg.AuthMiddleware())
+		transferRouters.Use(pkg.AuthMiddleware())
 		transferRouters.POST("/", transferHandler.CreateTransfer)
 		transferRouters.GET("/:transferID", transferHandler.GetTransferByID)
 		// transferRouters.PUT("/:transferID", transferHandler.UpdateTransfer)
@@ -84,7 +84,7 @@ func SetUpRouter(db *sql.DB) *gin.Engine {
 
 	walletRouters := apiV1.Group("/wallets")
 	{	
-		topupRouters.Use(pkg.AuthMiddleware())
+		walletRouters.Use(pkg.AuthMiddleware())
 		walletRouters.POST("/", walletHandler.CreateWallet)
 		walletRouters.GET("/:walletID", walletHandler.GetWalletByID)
 		walletRouters.PUT("/:walletID", walletHandler.UpdateWalletBalance)
@@ -93,7 +93,7 @@ func SetUpRouter(db *sql.DB) *gin.Engine {
 
 	withdrawalRouters := apiV1.Group("/withdrawals")
 	{	
-		topupRouters.Use(pkg.AuthMiddleware())
+		withdrawalRouters.Use(pkg.AuthMiddleware())
 		withdrawalRouters.POST("/", withdrawalHandler.CreateWithdrawal)
 		withdrawalRouters.GET("/:id", withdrawalHandler.GetWithdrawalByID)
 		// withdrawalRouters.PUT("/:id", withdrawalHandler.UpdateWithdrawal)
