@@ -3,11 +3,8 @@ package repository
 import (
 	"database/sql"
 	"log"
-
-
 	"github.com/KhoirulAziz99/final_project_e_wallet/internal/domain"
 )
-
 type UserRepository interface {
 	Create(newUser *domain.User) error
 	Update(updetedUser *domain.User) error

@@ -16,6 +16,7 @@ type TransferRepository interface {
 	Update(transfer *domain.Transfer) error
 	Delete(transferID int) error
 	History(wallet_id int) ([]*domain.Transfer, error)
+
 }
 type transferRepository struct {
 	db               *sql.DB
@@ -166,6 +167,7 @@ func (r *transferRepository) Create(transfer *domain.Transfer) error {
 	return nil
 }
 func (r *transferRepository) History(walletID int) ([]*domain.Transfer, error) {
+
 	query := `SELECT t.transfer_id, t.sender_wallet_id, t.receiver_wallet_id, t.amount, t.timestamp, w.balance
 	FROM transfer t
 	JOIN wallet w ON t.sender_wallet_id = w.wallet_id
@@ -182,6 +184,7 @@ func (r *transferRepository) History(walletID int) ([]*domain.Transfer, error) {
 
 	for rows.Next() {
 		transfer := &domain.Transfer{}
+
 		senderWallet := &domain.SenderWallet{}
 		receiverWallet := &domain.ReceiverWallet{}
 		senderUser := &domain.UserSender{}
@@ -193,6 +196,7 @@ func (r *transferRepository) History(walletID int) ([]*domain.Transfer, error) {
 			&receiverWallet.ID,
 			&transfer.Amount,
 			&transfer.Timestamp,
+
 			&senderWallet.Balance,
 		)
 		if err != nil {
@@ -213,3 +217,4 @@ func (r *transferRepository) History(walletID int) ([]*domain.Transfer, error) {
 
 	return transfers, nil
 }
+
