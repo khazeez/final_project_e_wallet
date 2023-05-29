@@ -130,7 +130,6 @@ func GeneratePDFPayment(payments []*domain.Payment) []byte {
 	for _, payment := range payments {
 		pdf.Ln(12)
 		pdf.Cell(20, 10, fmt.Sprintf("Payment ID: %d \n \n | Amount: %f \n | Time: %v ", payment.ID, payment.Amount, payment.Timestamp))
-
 	}
 	var buf bytes.Buffer
 	err := pdf.Output(&buf)

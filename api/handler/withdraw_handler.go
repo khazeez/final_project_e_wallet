@@ -10,6 +10,7 @@ import (
 	"github.com/KhoirulAziz99/final_project_e_wallet/internal/app"
 	"github.com/KhoirulAziz99/final_project_e_wallet/internal/domain"
 	"github.com/jung-kurt/gofpdf"
+
 )
 
 type WithdrawalHandler struct {
@@ -108,6 +109,7 @@ func (h *WithdrawalHandler) MakeWithdrawal(c *gin.Context) {
 
 func (h *WithdrawalHandler) HistoryWithdrawal(c *gin.Context) {
 	walletID, err := strconv.Atoi(c.Param("walletID"))
+  
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid wallet ID"})
 		return
@@ -120,14 +122,17 @@ func (h *WithdrawalHandler) HistoryWithdrawal(c *gin.Context) {
 	}
 
 	// Generate PDF from transaction data
-	pdfOutput := GeneratePDF(withdrawals)
+
+	pdfOutput := GeneratePDFwd(withdrawals)
+
 
 	// Send PDF file as response
 	c.Data(http.StatusOK, "application/pdf", pdfOutput)
 }
 
 
-func GeneratePDF(withdrawals []*domain.Withdrawal) []byte {
+func GeneratePDFwd(withdrawals []*domain.Withdrawal) []byte {
+
 	pdf := gofpdf.New("P", "mm", "A4", "")
 
 	pdf.AddPage()
@@ -144,7 +149,7 @@ func GeneratePDF(withdrawals []*domain.Withdrawal) []byte {
 
 	for _, withdrawal := range withdrawals {
 		pdf.Ln(12)
-		pdf.Cell(20, 10, fmt.Sprintf("Withdrawal ID: %d \n \n | Amount: %f \n | Time: %v ", withdrawal.ID, withdrawal.Amount, withdrawal.Timestamp))
+		pdf.Cell(20, 10, fmt.Sprintf("Withdrawal ID: %d \n \n | Amount: %2.f \n | Time: %v ", withdrawal.ID, withdrawal.Amount, withdrawal.Timestamp))
 
 	}
 	var buf bytes.Buffer
@@ -153,4 +158,6 @@ func GeneratePDF(withdrawals []*domain.Withdrawal) []byte {
 		return nil
 	}
 	return buf.Bytes()
+
 }
+

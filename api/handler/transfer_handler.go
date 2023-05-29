@@ -122,7 +122,7 @@ func GeneratePDFTransfer(transfers []*domain.Transfer) []byte {
 		pdf.Ln(12)
 		pdf.Cell(40, 10, fmt.Sprintf("sender ID: %d", transfer.SenderId.ID))
 		pdf.Cell(40, 10, fmt.Sprintf("receiver ID: %d", transfer.ReceiferId.ID))
-		pdf.Cell(40, 10, fmt.Sprintf("Amount: %f", transfer.Amount))
+		pdf.Cell(40, 10, fmt.Sprintf("Amount: %2.f", transfer.Amount))
 	}
 	var buf bytes.Buffer
 	err := pdf.Output(&buf)
