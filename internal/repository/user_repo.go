@@ -26,7 +26,8 @@ func (u userRepository) Create(newUser *domain.User) error {
 
 	_, err := u.db.Exec(query, newUser.ID, newUser.Name, newUser.Email, newUser.Password, newUser.ProfilePicture)
 	if err != nil {
-		panic(err)
+		log.Println("Failed to add user:", err)
+		return err
 	} else {
 		log.Println("Succsessfully added user")
 	}
@@ -37,7 +38,8 @@ func (u userRepository) Update(updetedUser *domain.User) error {
 	query := `UPDATE users SET name=$2, email=$3, password=$4, profile_picture=$5 WHERE user_id=$1`
 	_, err := u.db.Exec(query, updetedUser.ID, updetedUser.Name, updetedUser.Email, updetedUser.Password, updetedUser.ProfilePicture)
 	if err != nil {
-		panic(err)
+		log.Println("Failed to update user:", err)
+		return err
 	} else {
 		log.Println("Succsessfully updated")
 	}

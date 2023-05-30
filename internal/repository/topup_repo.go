@@ -40,6 +40,12 @@ func (r *topupRepository) Create(topup *domain.TopUp) error {
 	insertQuery := "INSERT INTO TopUp (topup_id, wallet_id, amount, timestamp) VALUES ($1, $2, $3, $4)"
 	_, err = r.db.Exec(insertQuery, topup.ID, topup.WalletId.ID, topup.Amount, time)
 	if err != nil {
+		// Jika terjadi kesalahan saat menyimpan top-up, perlu mengembalikan saldo ke kondisi semula
+		revertQuery := "UPDATE Wallet SET balance = balance - $1 WHERE wallet_id = $2"
+		_, revertErr := r.db.Exec(revertQuery, topup.Amount, topup.WalletId.ID)
+		if revertErr != nil {
+			return fmt.Errorf("failed to create top-up and revert wallet balance: %v (revert error: %v)", err, revertErr)
+		}
 		return fmt.Errorf("failed to create top-up: %v", err)
 	}
 
@@ -121,7 +127,13 @@ func (r *topupRepository) Update(topup *domain.TopUp) error {
 	queryUpdateAmount := "UPDATE topup SET amount = $1 WHERE topup_id = $2"
 	_, err = r.db.Exec(queryUpdateAmount, newAmount, topup.ID)
 	if err != nil {
-		return fmt.Errorf("failed to update top-up amount: %v", err)
+		// Jika terjadi kesalahan saat menyimpan top-up, perlu mengembalikan saldo ke kondisi semula
+		revertQuery := "UPDATE Wallet SET balance = balance - $1 WHERE wallet_id = $2"
+		_, revertErr := r.db.Exec(revertQuery, topup.Amount, topup.WalletId.ID)
+		if revertErr != nil {
+			return fmt.Errorf("failed to create top-up and revert wallet balance: %v (revert error: %v)", err, revertErr)
+		}
+		return fmt.Errorf("failed to create top-up: %v", err)
 	}
 
 	return nil
@@ -137,7 +149,7 @@ func (r *topupRepository) Delete(topupID int) error {
 }
 
 func (r *topupRepository) HistoryTopup(wallet_id int) ([]*domain.TopUp, error) {
-	query := `SELECT t.topup_id, t.amount, w.wallet_id, u.user_id, u.name, u.email, u.password, u.profile_picture, u.is_deleted, w.balance FROM topup t
+	query := `SELECT t.topup_id, t.amount,t.timestamp, w.wallet_id, u.user_id, u.name, u.email, u.password, u.profile_picture, u.is_deleted, w.balance FROM topup t
 	 	JOIN Wallet w ON t.wallet_id = w.wallet_id
 	 	JOIN users u ON w.user_id = u.user_id
 	 	WHERE t.wallet_id = $1`
@@ -157,6 +169,7 @@ func (r *topupRepository) HistoryTopup(wallet_id int) ([]*domain.TopUp, error) {
 		err := rows.Scan(
 	&topup.ID,
 	&topup.Amount,
+	&topup.Timestamp,
 	&wallet.ID,
 	&user.ID,
  	&user.Name,

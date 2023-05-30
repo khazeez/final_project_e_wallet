@@ -27,11 +27,17 @@ func NewPaymentRepository(db *sql.DB) PaymentRepository {
 }
 
 func (p *paymentRepository) Create(payment *domain.Payment) error {
-	query := "SELECT balance FROM wallet WHERE wallet_id = $1"
-	row := p.db.QueryRow(query, payment.WalletId.ID)
-	var balance float64
-	err := row.Scan(&balance)
+	tx, err := p.db.Begin() // Mulai transaksi
 	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %v", err)
+	}
+
+	query := "SELECT balance FROM wallet WHERE wallet_id = $1"
+	row := tx.QueryRow(query, payment.WalletId.ID)
+	var balance float64
+	err = row.Scan(&balance)
+	if err != nil {
+		_ = tx.Rollback() // Batalkan transaksi
 		if err == sql.ErrNoRows {
 			return fmt.Errorf("wallet not found")
 		}
@@ -39,24 +45,40 @@ func (p *paymentRepository) Create(payment *domain.Payment) error {
 	}
 
 	if balance < float64(payment.Amount) {
+		_ = tx.Rollback() // Batalkan transaksi
 		return fmt.Errorf("insufficient balance")
 	}
 
-	balance = 0
-	updateQuery := "UPDATE Wallet SET balance = balance - $1 WHERE wallet_id = $2"
-	_, err = p.db.Exec(updateQuery, payment.Amount, payment.WalletId.ID)
+	_, err = tx.Exec("SAVEPOINT balance_update") // Simpan titik penyimpanan untuk rollback
 	if err != nil {
+		_ = tx.Rollback() // Batalkan transaksi
+		return fmt.Errorf("failed to create savepoint: %v", err)
+	}
+
+	balance = 0
+	updateQuery := "UPDATE wallet SET balance = balance - $1 WHERE wallet_id = $2"
+	_, err = tx.Exec(updateQuery, payment.Amount, payment.WalletId.ID)
+	if err != nil {
+		_ = tx.Rollback() // Rollback ke titik penyimpanan
 		return fmt.Errorf("failed to update wallet balance: %v", err)
 	}
 
 	time := time.Now()
-	insertQuery := "INSERT INTO payment (payment_id, wallet_id, amount, timestamp, payment_type, payment_details) VALUES ($1, $2, $3, $4, $5, $6);"
-	_, err = p.db.Exec(insertQuery, payment.ID, payment.WalletId.ID, payment.Amount, time, payment.PaymentType, payment.PaymentDetail)
+	insertQuery := "INSERT INTO payment (payment_id, wallet_id, amount, timestamp, payment_type, payment_details) VALUES ($1, $2, $3, $4, $5, $6)"
+	_, err = tx.Exec(insertQuery, payment.ID, payment.WalletId.ID, payment.Amount, time, payment.PaymentType, payment.PaymentDetail)
 	if err != nil {
+		_ = tx.Rollback() // Rollback ke titik penyimpanan
 		return fmt.Errorf("failed to create payment: %v", err)
 	}
+
+	err = tx.Commit() // Konfirmasi transaksi
+	if err != nil {
+		return fmt.Errorf("failed to commit transaction: %v", err)
+	}
+
 	return nil
 }
+
 
 func (p *paymentRepository) FindOne(paymentID int) (*domain.Payment, error) {
 	query := `
@@ -119,7 +141,7 @@ func (r *paymentRepository) Delete(paymentID int) error {
 }
 
 func (r *paymentRepository) HistoryPayment(wallet_id int) ([]*domain.Payment, error) {
-	query := `SELECT t.payment_id, t.amount, t.payment_type, t.payment_details, w.wallet_id, u.user_id, u.name, u.email, u.password, u.profile_picture, u.is_deleted, w.balance FROM payment t
+	query := `SELECT t.payment_id, t.amount,t.timestamp ,t.payment_type, t.payment_details, w.wallet_id, u.user_id, u.name, u.email, u.password, u.profile_picture, u.is_deleted, w.balance FROM payment t
 	 	JOIN Wallet w ON t.wallet_id = w.wallet_id
 	 	JOIN users u ON w.user_id = u.user_id
 	 	WHERE t.wallet_id = $1`
@@ -139,6 +161,7 @@ func (r *paymentRepository) HistoryPayment(wallet_id int) ([]*domain.Payment, er
 		err := rows.Scan(
 			&payment.ID,
 			&payment.Amount,
+			&payment.Timestamp,
 			&payment.PaymentType,
 			&payment.PaymentDetail,
 			&wallet.ID,

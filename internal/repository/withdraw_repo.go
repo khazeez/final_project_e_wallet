@@ -29,45 +29,55 @@ func NewWithdrawRepository(db *sql.DB) WithdrawRepository {
 }
 
 func (r *withdrawRepository) Create(withdrawal *domain.Withdrawal) error {
+	tx, err := r.db.Begin() // Mulai transaksi
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %v", err)
+	}
+
 	// Cek apakah wallet dengan ID yang diberikan ada dalam database
 	query := "SELECT balance FROM Wallet WHERE wallet_id = $1"
-	row := r.db.QueryRow(query, withdrawal.WalletId.ID)
+	row := tx.QueryRow(query, withdrawal.WalletId.ID)
 	var balance float64
-	err := row.Scan(&balance)
+	err = row.Scan(&balance)
 	if err != nil {
+		_ = tx.Rollback() // Batalkan transaksi
 		if err == sql.ErrNoRows {
 			return fmt.Errorf("wallet not found")
 		}
 		return fmt.Errorf("failed to get wallet balance: %v", err)
 	}
 
-
 	// Cek apakah saldo cukup untuk melakukan penarikan
 	if balance < float64(withdrawal.Amount) {
+		_ = tx.Rollback() // Batalkan transaksi
 		return fmt.Errorf("insufficient balance")
 	}
 
 	// Kurangi saldo wallet sesuai dengan jumlah penarikan
-
-	// newBalance := balance - float64(withdrawal.Amount)
-	// Update saldo pada tabel wallet
-	balance = 0
 	updateQuery := "UPDATE Wallet SET balance = balance - $1 WHERE wallet_id = $2"
-	_, err = r.db.Exec(updateQuery, withdrawal.Amount, withdrawal.WalletId.ID)
+	_, err = tx.Exec(updateQuery, withdrawal.Amount, withdrawal.WalletId.ID)
 	if err != nil {
+		_ = tx.Rollback() // Batalkan transaksi
 		return fmt.Errorf("failed to update wallet balance: %v", err)
 	}
-
 
 	// Simpan data withdrawal ke dalam tabel Withdrawal
 	time := time.Now()
 	insertQuery := "INSERT INTO Withdrawal (withdrawal_id, wallet_id, amount, timestamp) VALUES ($1, $2, $3, $4)"
-	_, err = r.db.Exec(insertQuery, withdrawal.ID, withdrawal.WalletId.ID, withdrawal.Amount, time)
+	_, err = tx.Exec(insertQuery, withdrawal.ID, withdrawal.WalletId.ID, withdrawal.Amount, time)
 	if err != nil {
+		_ = tx.Rollback() // Batalkan transaksi
 		return fmt.Errorf("failed to create withdrawal: %v", err)
 	}
+
+	err = tx.Commit() // Konfirmasi transaksi
+	if err != nil {
+		return fmt.Errorf("failed to commit transaction: %v", err)
+	}
+
 	return nil
 }
+
 
 
 func (r *withdrawRepository) FindOne(withdrawalID int) (*domain.Withdrawal, error) {

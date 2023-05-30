@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 	"fmt"
+	"time"
 
 	// "errors"
 
@@ -31,9 +32,9 @@ func NewTransferRepository(db *sql.DB, walletRepository WalletRepository) Transf
 }
 
 func (r *transferRepository) FindOne(transferID int) (*domain.Transfer, error) {
-	query := "SELECT t.transfer_id, t.receiver_wallet_id, t.amount, s.balance, u.user_id, u.name, u.email, u.password FROM transfer t JOIN wallet s ON s.wallet_id = t.receiver_wallet_id JOIN users u ON s.user_id = u.user_id WHERE t.transfer_id = $1;"
+	query := "SELECT t.transfer_id, t.receiver_wallet_id, t.amount, s.balance, u.user_id, u.name, u.email, u.password FROM transfer t JOIN wallet s ON s.wallet_id = t.receiver_wallet_id JOIN users u ON s.user_id = u.user_id WHERE t.transfer_id = $1"
 
-	query2 := "SELECT t.transfer_id, t.sender_wallet_id, w.balance, u.user_id, u.name, u.email, u.password FROM transfer t JOIN wallet w ON t.sender_wallet_id = w.wallet_id JOIN users u ON w.user_id = u.user_id WHERE transfer_id = $1"
+	query2 := "SELECT t.transfer_id2, t.sender_wallet_id, w.balance, u.user_id, u.name, u.email, u.password FROM transfer t JOIN wallet w ON t.sender_wallet_id = w.wallet_id JOIN users u ON w.user_id = u.user_id WHERE transfer_id = $1"
 
 	row := r.db.QueryRow(query, transferID)
 	row2 := r.db.QueryRow(query2, transferID)
@@ -62,7 +63,7 @@ func (r *transferRepository) FindOne(transferID int) (*domain.Transfer, error) {
 
 	err2 := row2.Scan(
 
-		&transfer.ID,
+		&transfer.SenderId.ID,
 		&walletSender.ID,
 		&walletSender.Balance,
 		&sender.Sender_ID,
@@ -120,62 +121,90 @@ func (r *transferRepository) Delete(transferID int) error {
 }
 
 func (r *transferRepository) Create(transfer *domain.Transfer) error {
-	// Cek apakah wallet dengan ID yang diberikan ada dalam database
-	query := "SELECT balance FROM Wallet WHERE wallet_id = $1"
-	row := r.db.QueryRow(query, transfer.SenderId.ID)
-	var balance domain.Transfer
-	err := row.Scan(&balance.SenderId.Balance)
+	tx, err := r.db.Begin() // Mulai transaksi
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return fmt.Errorf("id not found")
-		}
-		return fmt.Errorf("failed to get wallet balance AAAAAAAAAA: %v", err)
+		return fmt.Errorf("failed to begin transaction: %v", err)
 	}
 
-	query2 := "SELECT balance FROM Wallet WHERE wallet_id = $1"
-	row2 := r.db.QueryRow(query2, transfer.ReceiferId.ID)
-	var balance2 domain.Transfer
-	err = row2.Scan(&balance2.ReceiferId.Balance)
+	// Cek apakah wallet pengirim dengan ID yang diberikan ada dalam database
+	querySender := "SELECT balance FROM Wallet WHERE wallet_id = $1"
+	rowSender := tx.QueryRow(querySender, transfer.SenderId.ID)
+	var senderBalance float64
+	err = rowSender.Scan(&senderBalance)
 	if err != nil {
+		_ = tx.Rollback() // Batalkan transaksi
 		if err == sql.ErrNoRows {
-			return fmt.Errorf("id not found")
+			return fmt.Errorf("sender wallet not found")
 		}
-		return fmt.Errorf("failed to get wallet balance BBBBBBBBB: %v", err)
+		return fmt.Errorf("failed to get sender wallet balance: %v", err)
 	}
 
-	if balance.SenderId.Balance < float64(transfer.Amount) {
+	// Cek apakah wallet penerima dengan ID yang diberikan ada dalam database
+	queryReceiver := "SELECT balance FROM Wallet WHERE wallet_id = $1"
+	rowReceiver := tx.QueryRow(queryReceiver, transfer.ReceiferId.ID)
+	var receiverBalance float64
+	err = rowReceiver.Scan(&receiverBalance)
+	if err != nil {
+		_ = tx.Rollback() // Batalkan transaksi
+		if err == sql.ErrNoRows {
+			return fmt.Errorf("receiver wallet not found")
+		}
+		return fmt.Errorf("failed to get receiver wallet balance: %v", err)
+	}
+
+	// Cek apakah saldo wallet pengirim cukup untuk melakukan transfer
+	if senderBalance < float64(transfer.Amount) {
+		_ = tx.Rollback() // Batalkan transaksi
 		return fmt.Errorf("insufficient balance")
 	}
 
-	balance.SenderId.Balance = 0
+	// Kurangi saldo wallet pengirim sesuai dengan jumlah transfer
 	updateQuerySender := "UPDATE Wallet SET balance = balance - $1 WHERE wallet_id = $2"
-	_, err = r.db.Exec(updateQuerySender, transfer.Amount, transfer.SenderId.ID)
+	_, err = tx.Exec(updateQuerySender, transfer.Amount, transfer.SenderId.ID)
 	if err != nil {
-		return fmt.Errorf("failed to update wallet balance: %v", err)
-	}
-	balance.ReceiferId.Balance = 0
-	updateQueryReceifer := "UPDATE Wallet SET balance = balance + $1 WHERE wallet_id = $2"
-	_, err = r.db.Exec(updateQueryReceifer, transfer.Amount, transfer.ReceiferId.ID)
-	if err != nil {
-		return fmt.Errorf("failed to update wallet balance: %v", err)
+		_ = tx.Rollback() // Batalkan transaksi
+		return fmt.Errorf("failed to update sender wallet balance: %v", err)
 	}
 
-	insertQuery := "INSERT INTO transfer (transfer_id, sender_wallet_id, receiver_wallet_id, amount, timestamp) VALUES ($1, $2, $3, $4, $5)"
-	_, err = r.db.Exec(insertQuery, transfer.ID, transfer.SenderId.ID, transfer.ReceiferId.ID, transfer.Amount, transfer.Timestamp)
+	// Tambah saldo wallet penerima sesuai dengan jumlah transfer
+	updateQueryReceiver := "UPDATE Wallet SET balance = balance + $1 WHERE wallet_id = $2"
+	_, err = tx.Exec(updateQueryReceiver, transfer.Amount, transfer.ReceiferId.ID)
 	if err != nil {
-		return fmt.Errorf("failed to transfer: %v", err)
+		_ = tx.Rollback() // Batalkan transaksi
+		return fmt.Errorf("failed to update receiver wallet balance: %v", err)
 	}
+
+	// Simpan data transfer ke dalam tabel Transfer
+	time:=time.Now()
+	insertQuery := "INSERT INTO Transfer (transfer_id, sender_wallet_id, receiver_wallet_id, amount, timestamp) VALUES ($1, $2, $3, $4, $5)"
+	_, err = tx.Exec(insertQuery, transfer.ID, transfer.SenderId.ID, transfer.ReceiferId.ID, transfer.Amount, time)
+	if err != nil {
+		_ = tx.Rollback() // Batalkan transaksi
+		return fmt.Errorf("failed to create transfer: %v", err)
+	}
+
+	err = tx.Commit() // Konfirmasi transaksi
+	if err != nil {
+		return fmt.Errorf("failed to commit transaction: %v", err)
+	}
+
 	return nil
 }
+
 func (r *transferRepository) History(walletID int) ([]*domain.Transfer, error) {
 
-	query := `SELECT t.transfer_id, t.sender_wallet_id, t.receiver_wallet_id, t.amount, t.timestamp, w.balance
+	query1 := `SELECT t.transfer_id, t.sender_wallet_id, t.receiver_wallet_id, t.amount, t.timestamp, w.balance, u.name
+	FROM transfer t
+	JOIN wallet w ON t.sender_wallet_id = w.wallet_id
+	JOIN users u ON w.user_id = u.user_id
+	WHERE t.sender_wallet_id = $1 OR t.receiver_wallet_id = $1`
+	query2 := `SELECT t.transfer_id, t.sender_wallet_id, t.receiver_wallet_id, t.amount, t.timestamp, w.balance, u.name
 	FROM transfer t
 	JOIN wallet w ON t.sender_wallet_id = w.wallet_id
 	JOIN users u ON w.user_id = u.user_id
 	WHERE t.sender_wallet_id = $1 OR t.receiver_wallet_id = $1`
 
-	rows, err := r.db.Query(query, walletID)
+	rows, err := r.db.Query(query1,query2, walletID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get transfers: %v", err)
 	}
@@ -197,7 +226,17 @@ func (r *transferRepository) History(walletID int) ([]*domain.Transfer, error) {
 			&receiverWallet.ID,
 			&transfer.Amount,
 			&transfer.Timestamp,
-
+			&senderWallet.Balance,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan transfer row: %v", err)
+		}
+		err = rows.Scan(
+			&transfer.ID,
+			&senderWallet.ID,
+			&receiverWallet.ID,
+			&transfer.Amount,
+			&transfer.Timestamp,
 			&senderWallet.Balance,
 		)
 		if err != nil {

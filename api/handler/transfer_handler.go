@@ -118,11 +118,18 @@ func GeneratePDFTransfer(transfers []*domain.Transfer) []byte {
 	pdf.Cell(40, 10, "Transaction History")
 
 	// Add transaction data to PDF
-	for _, transfer := range transfers {
+
+
+	for _, transfer := range transfers{
 		pdf.Ln(12)
-		pdf.Cell(40, 10, fmt.Sprintf("sender ID: %d", transfer.SenderId.ID))
-		pdf.Cell(40, 10, fmt.Sprintf("receiver ID: %d", transfer.ReceiferId.ID))
-		pdf.Cell(40, 10, fmt.Sprintf("Amount: %2.f", transfer.Amount))
+		pdf.Cell(20, 10, fmt.Sprintf("Sender Name: %s \n | Receive name : %s", transfer.SenderId.UserId.Sender_Name, transfer.ReceiferId.UserId.Receifer_Name,))
+		break
+
+	}
+
+	for _, transfer:= range transfers{
+		pdf.Ln(12)
+		pdf.Cell(20, 10, fmt.Sprintf("Transfer  ID: %d \n \n | Amount: %f \n | Time: %v ", transfer.ID, transfer.Amount, transfer.Timestamp))
 	}
 	var buf bytes.Buffer
 	err := pdf.Output(&buf)
