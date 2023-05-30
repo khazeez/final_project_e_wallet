@@ -1,14 +1,15 @@
 package handler
 
 import (
+	"bytes"
+	"fmt"
 	"net/http"
 	"strconv"
-	"fmt"
-	"github.com/gin-gonic/gin"
+
 	"github.com/KhoirulAziz99/final_project_e_wallet/internal/app"
 	"github.com/KhoirulAziz99/final_project_e_wallet/internal/domain"
+	"github.com/gin-gonic/gin"
 	"github.com/jung-kurt/gofpdf"
-	"bytes"
 )
 
 type TransferHandler struct {
@@ -109,7 +110,6 @@ func (h *TransferHandler) HistoryTransaction(c *gin.Context) {
 	c.Data(http.StatusOK, "application/pdf", pdfOutput)
 }
 
-
 func GeneratePDFTransfer(transfers []*domain.Transfer) []byte {
 	pdf := gofpdf.New("P", "mm", "A4", "")
 
@@ -119,17 +119,16 @@ func GeneratePDFTransfer(transfers []*domain.Transfer) []byte {
 
 	// Add transaction data to PDF
 
-
-	for _, transfer := range transfers{
+	for _, transfer := range transfers {
 		pdf.Ln(12)
-		pdf.Cell(20, 10, fmt.Sprintf("Sender Name: %s \n | Receive name : %s", transfer.SenderId.UserId.Sender_Name, transfer.ReceiferId.UserId.Receifer_Name,))
+		pdf.Cell(20, 10, fmt.Sprintf("Sender Name: %s \n ", transfer.SenderId.UserId.Sender_Name))
 		break
 
 	}
 
-	for _, transfer:= range transfers{
+	for _, transfer := range transfers {
 		pdf.Ln(12)
-		pdf.Cell(20, 10, fmt.Sprintf("Transfer  ID: %d \n \n | Amount: %f \n | Time: %v ", transfer.ID, transfer.Amount, transfer.Timestamp))
+		pdf.Cell(20, 10, fmt.Sprintf("To Receiver  ID: %d \n \n | Amount: %f \n | Time: %v ", transfer.ReceiferId.ID, transfer.Amount, transfer.Timestamp))
 	}
 	var buf bytes.Buffer
 	err := pdf.Output(&buf)

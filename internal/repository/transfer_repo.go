@@ -34,7 +34,7 @@ func NewTransferRepository(db *sql.DB, walletRepository WalletRepository) Transf
 func (r *transferRepository) FindOne(transferID int) (*domain.Transfer, error) {
 	query := "SELECT t.transfer_id, t.receiver_wallet_id, t.amount, s.balance, u.user_id, u.name, u.email, u.password FROM transfer t JOIN wallet s ON s.wallet_id = t.receiver_wallet_id JOIN users u ON s.user_id = u.user_id WHERE t.transfer_id = $1"
 
-	query2 := "SELECT t.transfer_id2, t.sender_wallet_id, w.balance, u.user_id, u.name, u.email, u.password FROM transfer t JOIN wallet w ON t.sender_wallet_id = w.wallet_id JOIN users u ON w.user_id = u.user_id WHERE transfer_id = $1"
+	query2 := "SELECT t.transfer_id, t.sender_wallet_id, w.balance, u.user_id, u.name, u.email, u.password FROM transfer t JOIN wallet w ON t.sender_wallet_id = w.wallet_id JOIN users u ON w.user_id = u.user_id WHERE transfer_id = $1"
 
 	row := r.db.QueryRow(query, transferID)
 	row2 := r.db.QueryRow(query2, transferID)
@@ -199,24 +199,24 @@ func (r *transferRepository) History(walletID int) ([]*domain.Transfer, error) {
 	JOIN wallet w ON t.sender_wallet_id = w.wallet_id
 	JOIN users u ON w.user_id = u.user_id
 	WHERE t.sender_wallet_id = $1 OR t.receiver_wallet_id = $1`
-	query2 := `SELECT t.transfer_id, t.sender_wallet_id, t.receiver_wallet_id, t.amount, t.timestamp, w.balance, u.name
-	FROM transfer t
-	JOIN wallet w ON t.sender_wallet_id = w.wallet_id
-	JOIN users u ON w.user_id = u.user_id
-	WHERE t.sender_wallet_id = $1 OR t.receiver_wallet_id = $1`
+	// query2 := `SELECT t.transfer_id, t.sender_wallet_id, t.receiver_wallet_id, t.amount, t.timestamp, w.balance, u.name
+	// FROM transfer t
+	// JOIN wallet w ON t.sender_wallet_id = w.wallet_id
+	// JOIN users u ON w.user_id = u.user_id
+	// WHERE t.sender_wallet_id = $1 OR t.receiver_wallet_id = $1`
 
 	
 	row, err := r.db.Query(query1, walletID)
 	if err != nil {
 		panic(err)
 	}
-	row2, err2 := r.db.Query(query2, walletID)
-	if err2 != nil {
-		panic(err)
-	}
+	// row2, err2 := r.db.Query(query2, walletID)
+	// if err2 != nil {
+	// 	panic(err)
+	// }
 
 	defer row.Close()
-	defer row2.Close()
+	// defer row2.Close()
 
 	transfers := []*domain.Transfer{}
 
@@ -236,6 +236,7 @@ func (r *transferRepository) History(walletID int) ([]*domain.Transfer, error) {
 			&transfer.Timestamp,
 			&senderWallet.Balance,
 			&senderUser.Sender_Name,
+
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan transfer row: %v", err)
@@ -250,35 +251,33 @@ func (r *transferRepository) History(walletID int) ([]*domain.Transfer, error) {
 			transfer.ReceiferId = *receiverWallet
 		}
 
-		transfers = append(transfers, transfer)
-	}
-
-	for row2.Next() {
-		transfer := &domain.Transfer{}
-		senderWallet := &domain.SenderWallet{}
-		receiverWallet := &domain.ReceiverWallet{}
-		receiverUser := &domain.UserReceiver{}
-
-		err = row2.Scan(
-			&transfer.ID,
-			&senderWallet.ID,
-			&receiverWallet.ID,
-			&transfer.Amount,
-			&transfer.Timestamp,
-			&senderWallet.Balance,
-			&receiverUser.Receifer_Name,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan transfer row: %v", err)
-		}
-
-		transfers = append(transfers, transfer)
-	
-
+		 transfers = append(transfers, transfer)
 	}
 
 	
+	// for row2.Next() {
+	// 	transfer2 := &domain.Transfer{}
+	// 	senderWallet := &domain.SenderWallet{}
+	// 	receiverWallet := &domain.ReceiverWallet{}
+	// 	receiverUser := &domain.UserReceiver{}
+
+	// 	err = row2.Scan(
+	// 		&transfer2.ID,
+	// 		&senderWallet.ID,
+	// 		&receiverWallet.ID,
+	// 		&transfer2.Amount,
+	// 		&transfer2.Timestamp,
+	// 		&receiverWallet.Balance,
+	// 		&receiverUser.Receifer_Name,
+	// 	)
+	// 	if err != nil {
+	// 		return nil, fmt.Errorf("failed to scan transfer row: %v", err)
+	// 	}
+		
+	// 	receiverWallet.UserId = *receiverUser
+	// 	transfers = append(transfers, transfer2)
 	
+	// }
 
 	return transfers, nil
 }
