@@ -120,6 +120,7 @@ func (r *transferRepository) Delete(transferID int) error {
 	return nil
 }
 
+
 func (r *transferRepository) Create(transfer *domain.Transfer) error {
 	tx, err := r.db.Begin() // Mulai transaksi
 	if err != nil {
@@ -204,15 +205,22 @@ func (r *transferRepository) History(walletID int) ([]*domain.Transfer, error) {
 	JOIN users u ON w.user_id = u.user_id
 	WHERE t.sender_wallet_id = $1 OR t.receiver_wallet_id = $1`
 
-	rows, err := r.db.Query(query1,query2, walletID)
+	
+	row, err := r.db.Query(query1, walletID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get transfers: %v", err)
+		panic(err)
 	}
-	defer rows.Close()
+	row2, err2 := r.db.Query(query2, walletID)
+	if err2 != nil {
+		panic(err)
+	}
+
+	defer row.Close()
+	defer row2.Close()
 
 	transfers := []*domain.Transfer{}
 
-	for rows.Next() {
+	for row.Next() {
 		transfer := &domain.Transfer{}
 
 		senderWallet := &domain.SenderWallet{}
@@ -220,30 +228,20 @@ func (r *transferRepository) History(walletID int) ([]*domain.Transfer, error) {
 		senderUser := &domain.UserSender{}
 		receiverUser := &domain.UserReceiver{}
 
-		err := rows.Scan(
+		err := row.Scan(
 			&transfer.ID,
 			&senderWallet.ID,
 			&receiverWallet.ID,
 			&transfer.Amount,
 			&transfer.Timestamp,
 			&senderWallet.Balance,
+			&senderUser.Sender_Name,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan transfer row: %v", err)
 		}
-		err = rows.Scan(
-			&transfer.ID,
-			&senderWallet.ID,
-			&receiverWallet.ID,
-			&transfer.Amount,
-			&transfer.Timestamp,
-			&senderWallet.Balance,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan transfer row: %v", err)
-		}
-
 		senderWallet.UserId = *senderUser
+		receiverWallet.UserId = *receiverUser
 		transfer.SenderId = *senderWallet
 
 		if receiverWallet.ID != 0 {
@@ -254,6 +252,33 @@ func (r *transferRepository) History(walletID int) ([]*domain.Transfer, error) {
 
 		transfers = append(transfers, transfer)
 	}
+
+	for row2.Next() {
+		transfer := &domain.Transfer{}
+		senderWallet := &domain.SenderWallet{}
+		receiverWallet := &domain.ReceiverWallet{}
+		receiverUser := &domain.UserReceiver{}
+
+		err = row2.Scan(
+			&transfer.ID,
+			&senderWallet.ID,
+			&receiverWallet.ID,
+			&transfer.Amount,
+			&transfer.Timestamp,
+			&senderWallet.Balance,
+			&receiverUser.Receifer_Name,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan transfer row: %v", err)
+		}
+
+		transfers = append(transfers, transfer)
+	
+
+	}
+
+	
+	
 
 	return transfers, nil
 }
